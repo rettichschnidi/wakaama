@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Install dependencies from APT repository
+      run: sudo apt-get install libcunit1-dev wget unzip
+
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Install Ninja
+      uses: ashutoshvarma/setup-ninja@master
+      with:
+        version: 1.10.0
+
+    - name: Setup SonarScanner
+      uses: warchant/setup-sonar-scanner@v1
+      with:
+        version: 4.4.0.2170
+
+    - name: Install Build Wrapper
+      run: |
+        wget https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip -O /tmp/build-wrapper-linux-x86.zip
+        mkdir ~/opt/
+        unzip /tmp/build-wrapper-linux-x86.zip -d ~/opt/
+
+    - name: Configure, build and execute unit tests
+      run: |
+        cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B build-wakaama-tests --build tests/
+        cd build-wakaama-tests
+        ~/opt/build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir sonar-cloud-build-wrapper-output make
+        ./lwm2munittests
+
+    - name: Run SonarCloud Scan
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: sonar-scanner -X -Dsonar.login=${{ secrets.SONAR_TOKEN }} -Dsonar.branch.name="${GITHUB_REF_NAME}"
+
+    - name: Configure and build examples
+      run: |
+        cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B build-wakaama-examples -GNinja --build examples/
+        cmake --build build-wakaama-examples
