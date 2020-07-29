@@ -41,10 +41,13 @@ jobs:
 
     - name: Configure, build and execute unit tests
       run: |
-        cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B build-wakaama-tests --build tests/
+        cmake -DCMAKE_C_FLAGS="--coverage" -B build-wakaama-tests --build tests/
         cd build-wakaama-tests
         ~/opt/build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir sonar-cloud-build-wrapper-output make
         ./lwm2munittests
+        mkdir gcov-reports
+        cd gcov-reports
+        find ../ -type f \( -name '*.gcno' -o -name '*.gcda' \) -exec gcov "{}" \;
 
     - name: Run SonarCloud Scan
       env:
