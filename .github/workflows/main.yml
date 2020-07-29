@@ -52,7 +52,7 @@ jobs:
     - name: Run SonarCloud Scan
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: sonar-scanner -X -Dsonar.login=${{ secrets.SONAR_TOKEN }} -Dsonar.branch.name="${GITHUB_REF_NAME}"
+      run: sonar-scanner -X -Dsonar.login=${{ secrets.SONAR_TOKEN }} -Dsonar.branch.name="master"
 
     - name: Configure and build examples
       run: |
