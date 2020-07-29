@@ -1,9 +1,22 @@
+## Overview
 Wakaama (formerly liblwm2m) is an implementation of the Open Mobile Alliance's LightWeight M2M
 protocol (LWM2M).
 
 Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
 
-## Source Layout
+### Badges
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=bugs)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=code_smells)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=coverage)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=duplicated_lines_density)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=ncloc)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=alert_status)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=security_rating)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=sqale_index)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=rettichschnidi_wakaama&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=rettichschnidi_wakaama)
+
+### Source Layout
 
     -+- core                   (the LWM2M engine)
      |    |
@@ -24,7 +37,6 @@ Developers mailing list: https://dev.eclipse.org/mailman/listinfo/wakaama-dev
           |
           +- shared            (utility functions for connection handling and command-
                                 line interface)
-
 
 ## Compiling
 
