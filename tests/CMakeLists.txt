@@ -15,6 +15,7 @@ add_definitions(-pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -
 
 include_directories (${WAKAAMA_SOURCES_DIR} ${SHARED_INCLUDE_DIRS})
 set_source_files_properties(${WAKAAMA_SOURCES_DIR}/senml_json.c PROPERTIES COMPILE_FLAGS -Wno-float-equal)
+set_source_files_properties(${WAKAAMA_SOURCES_DIR}/utils.c PROPERTIES COMPILE_FLAGS -Wno-float-equal)
 
 file(GLOB SOURCES "*.c")
 
