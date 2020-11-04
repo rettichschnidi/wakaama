@@ -76,6 +76,8 @@
 #include <ctype.h>
 #include <limits.h>
 
+#error BREAK BUILD
+
 static void prv_output_buffer(uint8_t * buffer,
                               int length)
 {
