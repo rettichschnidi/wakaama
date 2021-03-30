@@ -23,9 +23,9 @@ file(GLOB SOURCES "*.c")
 add_executable(${PROJECT_NAME} ${SOURCES} ${WAKAAMA_SOURCES} ${COAP_SOURCES} ${DATA_SOURCES} ${SHARED_SOURCES})
 target_link_libraries(${PROJECT_NAME} cunit)
 
-if(SANITIZER)
-    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER})
-    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=${SANITIZER})
+if(COVERAGE)
+    target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
+    target_link_options(${PROJECT_NAME} PRIVATE --coverage)
 endif()
 
 # Enable "test" target, add our unit tests to it
