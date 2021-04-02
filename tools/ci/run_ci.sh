@@ -24,6 +24,7 @@ OPT_BRANCH_SOURCE=
 OPT_BRANCH_TARGET=master
 OPT_C_EXTENSIONS=""
 OPT_C_STANDARD=""
+OPT_CLANG_FORMAT="clang-format-10"
 OPT_SANITIZER=""
 OPT_SCAN_BUILD=""
 OPT_SONARQUBE=""
@@ -31,6 +32,7 @@ OPT_TEST_COVERAGE_REPORT=""
 OPT_VERBOSE=0
 OPT_WRAPPER_CMD=""
 RUN_BUILD=0
+RUN_CLANG_FORMAT=0
 RUN_CLEAN=0
 RUN_GITLINT=0
 RUN_TESTS=0
@@ -49,6 +51,8 @@ Options:
                             (ENABLE: ON or OFF)
   --c-standard VERSION      Explicitly specify C VERSION to be used
                             (VERSION: 99, 11)
+  --clang-format BINARY     Set specific clang-format binary
+                            (BINARY: defaults to ${OPT_CLANG_FORMAT})
   --sanitizer TYPE          Enable sanitizer
                             (TYPE: address leak thread undefined)
   --scan-build BINARY       Enable Clang code analyzer using specified
@@ -64,6 +68,7 @@ Options:
 
 Available steps (executed by --all):
   --run-gitlint            Check git commits with gitlint
+  --run-clang-format       Check code formatting with clang-format
   --run-clean              Remove all build artifacts
   --run-build              Build all targets
   --run-tests              Build and execute tests
@@ -74,6 +79,24 @@ function usage() {
 
   echo "${HELP_MSG}"
   exit "${exit_code}"
+}
+
+function run_clang_format() {
+  local patch_file
+
+  patch_file="$(mktemp -t clang-format-patch.XXX)"
+  # shellcheck disable=SC2064
+  trap "{ rm -f -- '${patch_file}'; }" EXIT TERM INT
+
+  "git-${OPT_CLANG_FORMAT}" --diff "${OPT_BRANCH_TARGET}" |
+    { grep -v 'no modified files to format' || true; } > "${patch_file}"
+
+  if [ -s "${patch_file}" ]; then
+    cat "${patch_file}"
+    exit 1
+  fi
+
+  echo "No code formatting errors found"
 }
 
 function run_clean() {
@@ -153,8 +176,10 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l branch-target: \
                           -l c-extensions: \
                           -l c-standard: \
+                          -l clang-format: \
                           -l help \
                           -l run-build \
+                          -l run-clang-format \
                           -l run-clean \
                           -l run-gitlint \
                           -l run-tests \
@@ -187,6 +212,14 @@ while true; do
     --c-standard)
       OPT_C_STANDARD=$2
       shift 2
+      ;;
+    --clang-format)
+      OPT_CLANG_FORMAT=$2
+      shift 2
+      ;;
+    --run-clang-format)
+      RUN_CLANG_FORMAT=1
+      shift
       ;;
     --run-clean)
       RUN_CLEAN=1
@@ -233,6 +266,7 @@ while true; do
       shift
       ;;
     -a|--all)
+      RUN_CLANG_FORMAT=1
       RUN_CLEAN=1
       RUN_GITLINT=1
       RUN_BUILD=1
@@ -294,6 +328,10 @@ fi
 
 if [ "${RUN_GITLINT}" -eq 1 ]; then
   run_gitlint
+fi
+
+if [ "${RUN_CLANG_FORMAT}" -eq 1 ]; then
+  run_clang_format
 fi
 
 if [ "${RUN_CLEAN}" -eq 1 ]; then
