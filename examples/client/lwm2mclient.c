@@ -57,28 +57,28 @@
 */
 
 #include "lwm2mclient.h"
-#include "liblwm2m.h"
 #include "commandline.h"
+#include "liblwm2m.h"
 #ifdef WITH_TINYDTLS
 #include "dtlsconnection.h"
 #else
 #include "connection.h"
 #endif
 
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/stat.h>
+#include <ctype.h>
 #include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #define MAX_PACKET_SIZE 2048
 #define DEFAULT_SERVER_IPV6 "[::1]"
@@ -88,29 +88,27 @@ int g_reboot = 0;
 static int g_quit = 0;
 
 #define OBJ_COUNT 9
-lwm2m_object_t * objArray[OBJ_COUNT];
+lwm2m_object_t *objArray[OBJ_COUNT];
 
 // only backup security and server objects
-# define BACKUP_OBJECT_COUNT 2
-lwm2m_object_t * backupObjectArray[BACKUP_OBJECT_COUNT];
+#define BACKUP_OBJECT_COUNT 2
+lwm2m_object_t *backupObjectArray[BACKUP_OBJECT_COUNT];
 
 typedef struct
 {
-    lwm2m_object_t * securityObjP;
-    lwm2m_object_t * serverObject;
+    lwm2m_object_t *securityObjP;
+    lwm2m_object_t *serverObject;
     int sock;
 #ifdef WITH_TINYDTLS
-    dtls_connection_t * connList;
-    lwm2m_context_t * lwm2mH;
+    dtls_connection_t *connList;
+    lwm2m_context_t *lwm2mH;
 #else
-    connection_t * connList;
+    connection_t *connList;
 #endif
     int addressFamily;
 } client_data_t;
 
-static void prv_quit(lwm2m_context_t * lwm2mH,
-                     char * buffer,
-                     void * user_data)
+static void prv_quit(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
     /* unused parameters */
     (void)lwm2mH;
@@ -120,23 +118,17 @@ static void prv_quit(lwm2m_context_t * lwm2mH,
     g_quit = 1;
 }
 
-void handle_sigint(int signum)
-{
-    g_quit = 2;
-}
+void handle_sigint(int signum) { g_quit = 2; }
 
-void handle_value_changed(lwm2m_context_t * lwm2mH,
-                          lwm2m_uri_t * uri,
-                          const char * value,
-                          size_t valueLength)
+void handle_value_changed(lwm2m_context_t *lwm2mH, lwm2m_uri_t *uri, const char *value, size_t valueLength)
 {
-    lwm2m_object_t * object = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, uri->objectId);
+    lwm2m_object_t *object = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, uri->objectId);
 
     if (NULL != object)
     {
         if (object->writeFunc != NULL)
         {
-            lwm2m_data_t * dataP;
+            lwm2m_data_t *dataP;
             int result;
 
             dataP = lwm2m_data_new(1);
@@ -205,57 +197,61 @@ void handle_value_changed(lwm2m_context_t * lwm2mH,
 }
 
 #ifdef WITH_TINYDTLS
-void * lwm2m_connect_server(uint16_t secObjInstID,
-                            void * userData)
+void *lwm2m_connect_server(uint16_t secObjInstID, void *userData)
 {
-  client_data_t * dataP;
-  lwm2m_list_t * instance;
-  dtls_connection_t * newConnP = NULL;
-  dataP = (client_data_t *)userData;
-  lwm2m_object_t  * securityObj = dataP->securityObjP;
+    client_data_t *dataP;
+    lwm2m_list_t *instance;
+    dtls_connection_t *newConnP = NULL;
+    dataP = (client_data_t *)userData;
+    lwm2m_object_t *securityObj = dataP->securityObjP;
 
-  instance = LWM2M_LIST_FIND(dataP->securityObjP->instanceList, secObjInstID);
-  if (instance == NULL) return NULL;
+    instance = LWM2M_LIST_FIND(dataP->securityObjP->instanceList, secObjInstID);
+    if (instance == NULL)
+        return NULL;
 
+    newConnP =
+        connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
+    if (newConnP == NULL)
+    {
+        fprintf(stderr, "Connection creation failed.\n");
+        return NULL;
+    }
 
-  newConnP = connection_create(dataP->connList, dataP->sock, securityObj, instance->id, dataP->lwm2mH, dataP->addressFamily);
-  if (newConnP == NULL)
-  {
-      fprintf(stderr, "Connection creation failed.\n");
-      return NULL;
-  }
-
-  dataP->connList = newConnP;
-  return (void *)newConnP;
+    dataP->connList = newConnP;
+    return (void *)newConnP;
 }
 #else
-void * lwm2m_connect_server(uint16_t secObjInstID,
-                            void * userData)
+void *lwm2m_connect_server(uint16_t secObjInstID, void *userData)
 {
-    client_data_t * dataP;
-    char * uri;
-    char * host;
-    char * port;
-    connection_t * newConnP = NULL;
+    client_data_t *dataP;
+    char *uri;
+    char *host;
+    char *port;
+    connection_t *newConnP = NULL;
 
     dataP = (client_data_t *)userData;
 
     uri = get_server_uri(dataP->securityObjP, secObjInstID);
 
-    if (uri == NULL) return NULL;
+    if (uri == NULL)
+        return NULL;
 
     // parse uri in the form "coaps://[host]:[port]"
-    if (0==strncmp(uri, "coaps://", strlen("coaps://"))) {
-        host = uri+strlen("coaps://");
+    if (0 == strncmp(uri, "coaps://", strlen("coaps://")))
+    {
+        host = uri + strlen("coaps://");
     }
-    else if (0==strncmp(uri, "coap://",  strlen("coap://"))) {
-        host = uri+strlen("coap://");
+    else if (0 == strncmp(uri, "coap://", strlen("coap://")))
+    {
+        host = uri + strlen("coap://");
     }
-    else {
+    else
+    {
         goto exit;
     }
     port = strrchr(host, ':');
-    if (port == NULL) goto exit;
+    if (port == NULL)
+        goto exit;
     // remove brackets
     if (host[0] == '[')
     {
@@ -264,7 +260,8 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
         {
             *(port - 1) = 0;
         }
-        else goto exit;
+        else
+            goto exit;
     }
     // split strings
     *port = 0;
@@ -272,10 +269,12 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
 
     fprintf(stderr, "Opening connection to server at %s:%s\r\n", host, port);
     newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
-    if (newConnP == NULL) {
+    if (newConnP == NULL)
+    {
         fprintf(stderr, "Connection creation failed.\r\n");
     }
-    else {
+    else
+    {
         dataP->connList = newConnP;
     }
 
@@ -285,14 +284,13 @@ exit:
 }
 #endif
 
-void lwm2m_close_connection(void * sessionH,
-                            void * userData)
+void lwm2m_close_connection(void *sessionH, void *userData)
 {
-    client_data_t * app_data;
+    client_data_t *app_data;
 #ifdef WITH_TINYDTLS
-    dtls_connection_t * targetP;
+    dtls_connection_t *targetP;
 #else
-    connection_t * targetP;
+    connection_t *targetP;
 #endif
 
     app_data = (client_data_t *)userData;
@@ -310,9 +308,9 @@ void lwm2m_close_connection(void * sessionH,
     else
     {
 #ifdef WITH_TINYDTLS
-        dtls_connection_t * parentP;
+        dtls_connection_t *parentP;
 #else
-        connection_t * parentP;
+        connection_t *parentP;
 #endif
 
         parentP = app_data->connList;
@@ -328,11 +326,9 @@ void lwm2m_close_connection(void * sessionH,
     }
 }
 
-static void prv_output_servers(lwm2m_context_t * lwm2mH,
-                               char * buffer,
-                               void * user_data)
+static void prv_output_servers(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
-    lwm2m_server_t * targetP;
+    lwm2m_server_t *targetP;
 
     /* unused parameter */
     (void)user_data;
@@ -346,12 +342,12 @@ static void prv_output_servers(lwm2m_context_t * lwm2mH,
     else
     {
         fprintf(stdout, "Bootstrap Servers:\r\n");
-        for (targetP = lwm2mH->bootstrapServerList ; targetP != NULL ; targetP = targetP->next)
+        for (targetP = lwm2mH->bootstrapServerList; targetP != NULL; targetP = targetP->next)
         {
             fprintf(stdout, " - Security Object ID %d", targetP->secObjInstID);
             fprintf(stdout, "\tHold Off Time: %lu s", (unsigned long)targetP->lifetime);
             fprintf(stdout, "\tstatus: ");
-            switch(targetP->status)
+            switch (targetP->status)
             {
             case STATE_DEREGISTERED:
                 fprintf(stdout, "DEREGISTERED\r\n");
@@ -384,11 +380,11 @@ static void prv_output_servers(lwm2m_context_t * lwm2mH,
     else
     {
         fprintf(stdout, "LWM2M Servers:\r\n");
-        for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
+        for (targetP = lwm2mH->serverList; targetP != NULL; targetP = targetP->next)
         {
             fprintf(stdout, " - Server ID %d", targetP->shortID);
             fprintf(stdout, "\tstatus: ");
-            switch(targetP->status)
+            switch (targetP->status)
             {
             case STATE_DEREGISTERED:
                 fprintf(stdout, "DEREGISTERED\r\n");
@@ -397,7 +393,8 @@ static void prv_output_servers(lwm2m_context_t * lwm2mH,
                 fprintf(stdout, "REGISTRATION PENDING\r\n");
                 break;
             case STATE_REGISTERED:
-                fprintf(stdout, "REGISTERED\tlocation: \"%s\"\tLifetime: %lus\r\n", targetP->location, (unsigned long)targetP->lifetime);
+                fprintf(stdout, "REGISTERED\tlocation: \"%s\"\tLifetime: %lus\r\n", targetP->location,
+                        (unsigned long)targetP->lifetime);
                 break;
             case STATE_REG_UPDATE_PENDING:
                 fprintf(stdout, "REGISTRATION UPDATE PENDING\r\n");
@@ -415,22 +412,22 @@ static void prv_output_servers(lwm2m_context_t * lwm2mH,
     }
 }
 
-static void prv_change(lwm2m_context_t * lwm2mH,
-                       char * buffer,
-                       void * user_data)
+static void prv_change(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
     lwm2m_uri_t uri;
-    char * end = NULL;
+    char *end = NULL;
     int result;
 
     /* unused parameter */
     (void)user_data;
 
     end = get_end_of_arg(buffer);
-    if (end[0] == 0) goto syntax_error;
+    if (end[0] == 0)
+        goto syntax_error;
 
     result = lwm2m_stringToUri(buffer, end - buffer, &uri);
-    if (result == 0) goto syntax_error;
+    if (result == 0)
+        goto syntax_error;
 
     buffer = get_next_arg(end, &end);
 
@@ -449,11 +446,9 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
-static void prv_object_list(lwm2m_context_t * lwm2mH,
-                            char * buffer,
-                            void * user_data)
+static void prv_object_list(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
-    lwm2m_object_t * objectP;
+    lwm2m_object_t *objectP;
 
     /* unused parameter */
     (void)user_data;
@@ -466,9 +461,9 @@ static void prv_object_list(lwm2m_context_t * lwm2mH,
         }
         else
         {
-            lwm2m_list_t * instanceP;
+            lwm2m_list_t *instanceP;
 
-            for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
+            for (instanceP = objectP->instanceList; instanceP != NULL; instanceP = instanceP->next)
             {
                 fprintf(stdout, "/%d/%d  ", objectP->objID, instanceP->id);
             }
@@ -477,12 +472,10 @@ static void prv_object_list(lwm2m_context_t * lwm2mH,
     }
 }
 
-static void prv_instance_dump(lwm2m_context_t * lwm2mH,
-                              lwm2m_object_t * objectP,
-                              uint16_t id)
+static void prv_instance_dump(lwm2m_context_t *lwm2mH, lwm2m_object_t *objectP, uint16_t id)
 {
     int numData;
-    lwm2m_data_t * dataArray;
+    lwm2m_data_t *dataArray;
     uint16_t res;
 
     numData = 0;
@@ -498,25 +491,25 @@ static void prv_instance_dump(lwm2m_context_t * lwm2mH,
     dump_tlv(stdout, numData, dataArray, 0);
 }
 
-
-static void prv_object_dump(lwm2m_context_t * lwm2mH,
-                            char * buffer,
-                            void * user_data)
+static void prv_object_dump(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
     lwm2m_uri_t uri;
-    char * end = NULL;
+    char *end = NULL;
     int result;
-    lwm2m_object_t * objectP;
+    lwm2m_object_t *objectP;
 
     /* unused parameter */
     (void)user_data;
 
     end = get_end_of_arg(buffer);
-    if (end[0] == 0) goto syntax_error;
+    if (end[0] == 0)
+        goto syntax_error;
 
     result = lwm2m_stringToUri(buffer, end - buffer, &uri);
-    if (result == 0) goto syntax_error;
-    if (LWM2M_URI_IS_SET_RESOURCE(&uri)) goto syntax_error;
+    if (result == 0)
+        goto syntax_error;
+    if (LWM2M_URI_IS_SET_RESOURCE(&uri))
+        goto syntax_error;
 
     objectP = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, uri.objectId);
     if (objectP == NULL)
@@ -531,9 +524,9 @@ static void prv_object_dump(lwm2m_context_t * lwm2mH,
     }
     else
     {
-        lwm2m_list_t * instanceP;
+        lwm2m_list_t *instanceP;
 
-        for (instanceP = objectP->instanceList; instanceP != NULL ; instanceP = instanceP->next)
+        for (instanceP = objectP->instanceList; instanceP != NULL; instanceP = instanceP->next)
         {
             fprintf(stdout, "Instance %d:\r\n", instanceP->id);
             prv_instance_dump(lwm2mH, objectP, instanceP->id);
@@ -547,16 +540,15 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
-static void prv_update(lwm2m_context_t * lwm2mH,
-                       char * buffer,
-                       void * user_data)
+static void prv_update(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
     /* unused parameter */
     (void)user_data;
 
-    if (buffer[0] == 0) goto syntax_error;
+    if (buffer[0] == 0)
+        goto syntax_error;
 
-    uint16_t serverId = (uint16_t) atoi(buffer);
+    uint16_t serverId = (uint16_t)atoi(buffer);
     int res = lwm2m_update_registration(lwm2mH, serverId, false);
     if (res != 0)
     {
@@ -570,13 +562,14 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
 }
 
-static void update_battery_level(lwm2m_context_t * context)
+static void update_battery_level(lwm2m_context_t *context)
 {
     static time_t next_change_time = 0;
     time_t tv_sec;
 
     tv_sec = lwm2m_gettime();
-    if (tv_sec < 0) return;
+    if (tv_sec < 0)
+        return;
 
     if (next_change_time < tv_sec)
     {
@@ -585,7 +578,8 @@ static void update_battery_level(lwm2m_context_t * context)
         lwm2m_uri_t uri;
         int level = rand() % 100;
 
-        if (0 > level) level = -level;
+        if (0 > level)
+            level = -level;
         if (lwm2m_stringToUri("/3/0/9", 6, &uri))
         {
             valueLength = sprintf(value, "%d", level);
@@ -593,16 +587,15 @@ static void update_battery_level(lwm2m_context_t * context)
             handle_value_changed(context, &uri, value, valueLength);
         }
         level = rand() % 20;
-        if (0 > level) level = -level;
+        if (0 > level)
+            level = -level;
         next_change_time = tv_sec + level + 10;
     }
 }
 
-static void prv_add(lwm2m_context_t * lwm2mH,
-                    char * buffer,
-                    void * user_data)
+static void prv_add(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
-    lwm2m_object_t * objectP;
+    lwm2m_object_t *objectP;
     int res;
 
     /* unused parameter */
@@ -628,9 +621,7 @@ static void prv_add(lwm2m_context_t * lwm2mH,
     return;
 }
 
-static void prv_remove(lwm2m_context_t * lwm2mH,
-                       char * buffer,
-                       void * user_data)
+static void prv_remove(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
     int res;
 
@@ -653,11 +644,9 @@ static void prv_remove(lwm2m_context_t * lwm2mH,
 
 #ifdef LWM2M_BOOTSTRAP
 
-static void prv_initiate_bootstrap(lwm2m_context_t * lwm2mH,
-                                   char * buffer,
-                                   void * user_data)
+static void prv_initiate_bootstrap(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
-    lwm2m_server_t * targetP;
+    lwm2m_server_t *targetP;
 
     /* unused parameter */
     (void)user_data;
@@ -672,17 +661,17 @@ static void prv_initiate_bootstrap(lwm2m_context_t * lwm2mH,
     }
 }
 
-static void prv_display_objects(lwm2m_context_t * lwm2mH,
-                                char * buffer,
-                                void * user_data)
+static void prv_display_objects(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
-    lwm2m_object_t * object;
+    lwm2m_object_t *object;
 
     /* unused parameter */
     (void)user_data;
 
-    for (object = lwm2mH->objectList; object != NULL; object = object->next){
-        if (NULL != object) {
+    for (object = lwm2mH->objectList; object != NULL; object = object->next)
+    {
+        if (NULL != object)
+        {
             switch (object->objID)
             {
             case LWM2M_SECURITY_OBJECT_ID:
@@ -714,41 +703,43 @@ static void prv_display_objects(lwm2m_context_t * lwm2mH,
     }
 }
 
-static void prv_display_backup(lwm2m_context_t * lwm2mH,
-                               char * buffer,
-                               void * user_data)
+static void prv_display_backup(lwm2m_context_t *lwm2mH, char *buffer, void *user_data)
 {
-   int i;
+    int i;
 
-   /* unused parameters */
-   (void)lwm2mH;
-   (void)buffer;
-   (void)user_data;
+    /* unused parameters */
+    (void)lwm2mH;
+    (void)buffer;
+    (void)user_data;
 
-   for (i = 0 ; i < BACKUP_OBJECT_COUNT ; i++) {
-       lwm2m_object_t * object = backupObjectArray[i];
-       if (NULL != object) {
-           switch (object->objID)
-           {
-           case LWM2M_SECURITY_OBJECT_ID:
-               display_security_object(object);
-               break;
-           case LWM2M_SERVER_OBJECT_ID:
-               display_server_object(object);
-               break;
-           default:
-               break;
-           }
-       }
-   }
+    for (i = 0; i < BACKUP_OBJECT_COUNT; i++)
+    {
+        lwm2m_object_t *object = backupObjectArray[i];
+        if (NULL != object)
+        {
+            switch (object->objID)
+            {
+            case LWM2M_SECURITY_OBJECT_ID:
+                display_security_object(object);
+                break;
+            case LWM2M_SERVER_OBJECT_ID:
+                display_server_object(object);
+                break;
+            default:
+                break;
+            }
+        }
+    }
 }
 
-static void prv_backup_objects(lwm2m_context_t * context)
+static void prv_backup_objects(lwm2m_context_t *context)
 {
     uint16_t i;
 
-    for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
-        if (NULL != backupObjectArray[i]) {
+    for (i = 0; i < BACKUP_OBJECT_COUNT; i++)
+    {
+        if (NULL != backupObjectArray[i])
+        {
             switch (backupObjectArray[i]->objID)
             {
             case LWM2M_SECURITY_OBJECT_ID:
@@ -770,13 +761,15 @@ static void prv_backup_objects(lwm2m_context_t * context)
     /*
      * Backup content of objects 0 (security) and 1 (server)
      */
-    copy_security_object(backupObjectArray[0], (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SECURITY_OBJECT_ID));
-    copy_server_object(backupObjectArray[1], (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SERVER_OBJECT_ID));
+    copy_security_object(backupObjectArray[0],
+                         (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SECURITY_OBJECT_ID));
+    copy_server_object(backupObjectArray[1],
+                       (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SERVER_OBJECT_ID));
 }
 
-static void prv_restore_objects(lwm2m_context_t * context)
+static void prv_restore_objects(lwm2m_context_t *context)
 {
-    lwm2m_object_t * targetP;
+    lwm2m_object_t *targetP;
 
     /*
      * Restore content  of objects 0 (security) and 1 (server)
@@ -797,22 +790,21 @@ static void prv_restore_objects(lwm2m_context_t * context)
     fprintf(stdout, "[BOOTSTRAP] ObjectList restored\r\n");
 }
 
-static void update_bootstrap_info(lwm2m_client_state_t * previousBootstrapState,
-        lwm2m_context_t * context)
+static void update_bootstrap_info(lwm2m_client_state_t *previousBootstrapState, lwm2m_context_t *context)
 {
     if (*previousBootstrapState != context->state)
     {
         *previousBootstrapState = context->state;
-        switch(context->state)
+        switch (context->state)
         {
-            case STATE_BOOTSTRAPPING:
+        case STATE_BOOTSTRAPPING:
 #ifdef WITH_LOGS
-                fprintf(stdout, "[BOOTSTRAP] backup security and server objects\r\n");
+            fprintf(stdout, "[BOOTSTRAP] backup security and server objects\r\n");
 #endif
-                prv_backup_objects(context);
-                break;
-            default:
-                break;
+            prv_backup_objects(context);
+            break;
+        default:
+            break;
         }
     }
 }
@@ -820,8 +812,10 @@ static void update_bootstrap_info(lwm2m_client_state_t * previousBootstrapState,
 static void close_backup_object()
 {
     int i;
-    for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
-        if (NULL != backupObjectArray[i]) {
+    for (i = 0; i < BACKUP_OBJECT_COUNT; i++)
+    {
+        if (NULL != backupObjectArray[i])
+        {
             switch (backupObjectArray[i]->objID)
             {
             case LWM2M_SECURITY_OBJECT_ID:
@@ -848,14 +842,18 @@ void print_usage(void)
     fprintf(stdout, "  -n NAME\tSet the endpoint name of the Client. Default: testlwm2mclient\r\n");
     fprintf(stdout, "  -l PORT\tSet the local UDP port of the Client. Default: 56830\r\n");
     fprintf(stdout, "  -h HOST\tSet the hostname of the LWM2M Server to connect to. Default: localhost\r\n");
-    fprintf(stdout, "  -p PORT\tSet the port of the LWM2M Server to connect to. Default: "LWM2M_STANDARD_PORT_STR"\r\n");
+    fprintf(stdout,
+            "  -p PORT\tSet the port of the LWM2M Server to connect to. Default: " LWM2M_STANDARD_PORT_STR "\r\n");
     fprintf(stdout, "  -4\t\tUse IPv4 connection. Default: IPv6 connection\r\n");
     fprintf(stdout, "  -t TIME\tSet the lifetime of the Client. Default: 300\r\n");
     fprintf(stdout, "  -b\t\tBootstrap requested.\r\n");
     fprintf(stdout, "  -c\t\tChange battery level over time.\r\n");
 #ifdef WITH_TINYDTLS
-    fprintf(stdout, "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
-    fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none secure mode\r\n");
+    fprintf(
+        stdout,
+        "  -i STRING\tSet the device management or bootstrap server PSK identity. If not set use none secure mode\r\n");
+    fprintf(stdout, "  -s HEXSTRING\tSet the device management or bootstrap server Pre-Shared-Key. If not set use none "
+                    "secure mode\r\n");
 #endif
     fprintf(stdout, "\r\n");
 }
@@ -864,11 +862,11 @@ int main(int argc, char *argv[])
 {
     client_data_t data;
     int result;
-    lwm2m_context_t * lwm2mH = NULL;
-    const char * localPort = "56830";
-    const char * server = NULL;
-    const char * serverPort = LWM2M_STANDARD_PORT_STR;
-    char * name = "testlwm2mclient";
+    lwm2m_context_t *lwm2mH = NULL;
+    const char *localPort = "56830";
+    const char *server = NULL;
+    const char *serverPort = LWM2M_STANDARD_PORT_STR;
+    char *name = "testlwm2mclient";
     int lifetime = 300;
     int batterylevelchanging = 0;
     time_t reboot_time = 0;
@@ -880,44 +878,52 @@ int main(int argc, char *argv[])
     lwm2m_client_state_t previousState = STATE_INITIAL;
 #endif
 
-    char * pskId = NULL;
+    char *pskId = NULL;
 #ifdef WITH_TINYDTLS
-    char * psk = NULL;
+    char *psk = NULL;
 #endif
     uint16_t pskLen = -1;
-    char * pskBuffer = NULL;
+    char *pskBuffer = NULL;
 
     /*
-     * The function start by setting up the command line interface (which may or not be useful depending on your project)
+     * The function start by setting up the command line interface (which may or not be useful depending on your
+     * project)
      *
      * This is an array of commands describes as { name, description, long description, callback, userdata }.
-     * The firsts tree are easy to understand, the callback is the function that will be called when this command is typed
-     * and in the last one will be stored the lwm2m context (allowing access to the server settings and the objects).
+     * The firsts tree are easy to understand, the callback is the function that will be called when this command is
+     * typed and in the last one will be stored the lwm2m context (allowing access to the server settings and the
+     * objects).
      */
-    command_desc_t commands[] =
-    {
-            {"list", "List known servers.", NULL, prv_output_servers, NULL},
-            {"change", "Change the value of resource.", " change URI [DATA]\r\n"
-                                                        "   URI: uri of the resource such as /3/0, /3/0/2\r\n"
-                                                        "   DATA: (optional) new value\r\n", prv_change, NULL},
-            {"update", "Trigger a registration update", " update SERVER\r\n"
-                                                        "   SERVER: short server id such as 123\r\n", prv_update, NULL},
+    command_desc_t commands[] = {
+        {"list", "List known servers.", NULL, prv_output_servers, NULL},
+        {"change", "Change the value of resource.",
+         " change URI [DATA]\r\n"
+         "   URI: uri of the resource such as /3/0, /3/0/2\r\n"
+         "   DATA: (optional) new value\r\n",
+         prv_change, NULL},
+        {"update", "Trigger a registration update",
+         " update SERVER\r\n"
+         "   SERVER: short server id such as 123\r\n",
+         prv_update, NULL},
 #ifdef LWM2M_BOOTSTRAP
-            {"bootstrap", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
-            {"dispb", "Display current backup of objects/instances/resources\r\n"
-                    "\t(only security and server objects are backupped)", NULL, prv_display_backup, NULL},
+        {"bootstrap", "Initiate a DI bootstrap process", NULL, prv_initiate_bootstrap, NULL},
+        {"dispb",
+         "Display current backup of objects/instances/resources\r\n"
+         "\t(only security and server objects are backupped)",
+         NULL, prv_display_backup, NULL},
 #endif
-            {"ls", "List Objects and Instances", NULL, prv_object_list, NULL},
-            {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
-            {"dump", "Dump an Object", "dump URI"
-                                       "URI: uri of the Object or Instance such as /3/0, /1\r\n", prv_object_dump, NULL},
-            {"add", "Add support of object 31024", NULL, prv_add, NULL},
-            {"rm", "Remove support of object 31024", NULL, prv_remove, NULL},
-            {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
-            {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
+        {"ls", "List Objects and Instances", NULL, prv_object_list, NULL},
+        {"disp", "Display current objects/instances/resources", NULL, prv_display_objects, NULL},
+        {"dump", "Dump an Object",
+         "dump URI"
+         "URI: uri of the Object or Instance such as /3/0, /1\r\n",
+         prv_object_dump, NULL},
+        {"add", "Add support of object 31024", NULL, prv_add, NULL},
+        {"rm", "Remove support of object 31024", NULL, prv_remove, NULL},
+        {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
+        {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 
-            COMMAND_END_LIST
-    };
+        COMMAND_END_LIST};
 
     memset(&data, 0, sizeof(client_data_t));
     data.addressFamily = AF_INET6;
@@ -925,9 +931,7 @@ int main(int argc, char *argv[])
     opt = 1;
     while (opt < argc)
     {
-        if (argv[opt] == NULL
-            || argv[opt][0] != '-'
-            || argv[opt][2] != 0)
+        if (argv[opt] == NULL || argv[opt][0] != '-' || argv[opt][2] != 0)
         {
             print_usage();
             return 0;
@@ -936,7 +940,8 @@ int main(int argc, char *argv[])
         {
         case 'b':
             bootstrapRequested = true;
-            if (!serverPortChanged) serverPort = LWM2M_BSSERVER_PORT_STR;
+            if (!serverPortChanged)
+                serverPort = LWM2M_BSSERVER_PORT_STR;
             break;
         case 'c':
             batterylevelchanging = 1;
@@ -1057,10 +1062,10 @@ int main(int argc, char *argv[])
         char *b = pskBuffer;
         char xlate[] = "0123456789ABCDEF";
 
-        for ( ; *h; h += 2, ++b)
+        for (; *h; h += 2, ++b)
         {
             char *l = strchr(xlate, toupper(*h));
-            char *r = strchr(xlate, toupper(*(h+1)));
+            char *r = strchr(xlate, toupper(*(h + 1)));
 
             if (!r || !l)
             {
@@ -1076,9 +1081,9 @@ int main(int argc, char *argv[])
     char serverUri[50];
     int serverId = 123;
 #ifdef WITH_TINYDTLS
-    sprintf (serverUri, "coaps://%s:%s", server, serverPort);
+    sprintf(serverUri, "coaps://%s:%s", server, serverPort);
 #else
-    sprintf (serverUri, "coap://%s:%s", server, serverPort);
+    sprintf(serverUri, "coap://%s:%s", server, serverPort);
 #endif
 #ifdef LWM2M_BOOTSTRAP
     objArray[0] = get_security_object(serverId, serverUri, pskId, pskBuffer, pskLen, bootstrapRequested);
@@ -1148,17 +1153,17 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to create Access Control object\r\n");
         return -1;
     }
-    else if (acc_ctrl_obj_add_inst(objArray[8], instId, 3, 0, serverId)==false)
+    else if (acc_ctrl_obj_add_inst(objArray[8], instId, 3, 0, serverId) == false)
     {
         fprintf(stderr, "Failed to create Access Control object instance\r\n");
         return -1;
     }
-    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0b000000000001111)==false)
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 0, 0b000000000001111) == false)
     {
         fprintf(stderr, "Failed to create Access Control ACL default resource\r\n");
         return -1;
     }
-    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001)==false)
+    else if (acc_ctrl_oi_add_ac_val(objArray[8], instId, 999, 0b000000000000001) == false)
     {
         fprintf(stderr, "Failed to create Access Control ACL resource for serverId: 999\r\n");
         return -1;
@@ -1193,7 +1198,8 @@ int main(int argc, char *argv[])
     init_value_change(lwm2mH);
 
     fprintf(stdout, "LWM2M Client \"%s\" started on port %s\r\n", name, localPort);
-    fprintf(stdout, "> "); fflush(stdout);
+    fprintf(stdout, "> ");
+    fflush(stdout);
     /*
      * We now enter in a while loop that will handle the communications from the server
      */
@@ -1275,7 +1281,7 @@ int main(int argc, char *argv[])
         if (result != 0)
         {
             fprintf(stderr, "lwm2m_step() failed: 0x%X\r\n", result);
-            if(previousState == STATE_BOOTSTRAPPING)
+            if (previousState == STATE_BOOTSTRAPPING)
             {
 #ifdef WITH_LOGS
                 fprintf(stdout, "[BOOTSTRAP] restore security and server objects\r\n");
@@ -1283,7 +1289,8 @@ int main(int argc, char *argv[])
                 prv_restore_objects(lwm2mH);
                 lwm2mH->state = STATE_INITIAL;
             }
-            else return -1;
+            else
+                return -1;
         }
 #ifdef LWM2M_BOOTSTRAP
         update_bootstrap_info(&previousState, lwm2mH);
@@ -1298,7 +1305,7 @@ int main(int argc, char *argv[])
         {
             if (errno != EINTR)
             {
-              fprintf(stderr, "Error in select(): %d %s\r\n", errno, strerror(errno));
+                fprintf(stderr, "Error in select(): %d %s\r\n", errno, strerror(errno));
             }
         }
         else if (result > 0)
@@ -1325,19 +1332,19 @@ int main(int argc, char *argv[])
                 {
                     fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
                 }
-                else if (numBytes >= MAX_PACKET_SIZE) 
+                else if (numBytes >= MAX_PACKET_SIZE)
                 {
                     fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
-                } 
+                }
                 else if (0 < numBytes)
                 {
                     char s[INET6_ADDRSTRLEN];
                     in_port_t port;
 
 #ifdef WITH_TINYDTLS
-                    dtls_connection_t * connP;
+                    dtls_connection_t *connP;
 #else
-                    connection_t * connP;
+                    connection_t *connP;
 #endif
                     if (AF_INET == addr.ss_family)
                     {
@@ -1368,7 +1375,7 @@ int main(int argc, char *argv[])
                         int result = connection_handle_packet(connP, buffer, numBytes);
                         if (0 != result)
                         {
-                             printf("error handling message %d\n",result);
+                            printf("error handling message %d\n", result);
                         }
 #else
                         lwm2m_handle_packet(lwm2mH, buffer, numBytes, connP);
@@ -1393,9 +1400,10 @@ int main(int argc, char *argv[])
                 {
                     buffer[numBytes] = 0;
                     /*
-                     * We call the corresponding callback of the typed command passing it the buffer for further arguments
+                     * We call the corresponding callback of the typed command passing it the buffer for further
+                     * arguments
                      */
-                    handle_command(lwm2mH, commands, (char*)buffer);
+                    handle_command(lwm2mH, commands, (char *)buffer);
                 }
                 if (g_quit == 0)
                 {
@@ -1411,7 +1419,8 @@ int main(int argc, char *argv[])
     }
 
     /*
-     * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client from it
+     * Finally when the loop is left smoothly - asked by user in the command line interface - we unregister our client
+     * from it
      */
     if (g_quit == 1)
     {

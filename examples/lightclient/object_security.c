@@ -15,7 +15,7 @@
  *    Bosch Software Innovations GmbH - Please refer to git log
  *    Pascal Rieux - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -43,23 +43,21 @@
 
 #include "liblwm2m.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-
 
 typedef struct _security_instance_
 {
-    struct _security_instance_ * next;        // matches lwm2m_list_t::next
-    uint16_t                     instanceId;  // matches lwm2m_list_t::id
-    char *                       uri;
-    bool                         isBootstrap;
-    uint16_t                     shortID;
-    uint32_t                     clientHoldOffTime;
+    struct _security_instance_ *next; // matches lwm2m_list_t::next
+    uint16_t instanceId;              // matches lwm2m_list_t::id
+    char *uri;
+    bool isBootstrap;
+    uint16_t shortID;
+    uint32_t clientHoldOffTime;
 } security_instance_t;
 
-static uint8_t prv_get_value(lwm2m_data_t * dataP,
-                             security_instance_t * targetP)
+static uint8_t prv_get_value(lwm2m_data_t *dataP, security_instance_t *targetP)
 {
 
     switch (dataP->id)
@@ -110,7 +108,7 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
     case LWM2M_SECURITY_SMS_KEY_PARAM_ID:
         // Here we return an opaque of 6 bytes containing a buggy value
         {
-            char * value = "12345";
+            char *value = "12345";
             lwm2m_data_encode_opaque((uint8_t *)value, 6, dataP);
         }
         return COAP_205_CONTENT;
@@ -118,7 +116,7 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
     case LWM2M_SECURITY_SMS_SECRET_KEY_ID:
         // Here we return an opaque of 32 bytes containing a buggy value
         {
-            char * value = "1234567890abcdefghijklmnopqrstu";
+            char *value = "1234567890abcdefghijklmnopqrstu";
             lwm2m_data_encode_opaque((uint8_t *)value, 32, dataP);
         }
         return COAP_205_CONTENT;
@@ -140,13 +138,10 @@ static uint8_t prv_get_value(lwm2m_data_t * dataP,
     }
 }
 
-static uint8_t prv_security_read(lwm2m_context_t * contextP,
-                                 uint16_t instanceId,
-                                 int * numDataP,
-                                 lwm2m_data_t ** dataArrayP,
-                                 lwm2m_object_t * objectP)
+static uint8_t prv_security_read(lwm2m_context_t *contextP, uint16_t instanceId, int *numDataP,
+                                 lwm2m_data_t **dataArrayP, lwm2m_object_t *objectP)
 {
-    security_instance_t * targetP;
+    security_instance_t *targetP;
     uint8_t result;
     int i;
 
@@ -154,7 +149,8 @@ static uint8_t prv_security_read(lwm2m_context_t * contextP,
     (void)contextP;
 
     targetP = (security_instance_t *)lwm2m_list_find(objectP->instanceList, instanceId);
-    if (NULL == targetP) return COAP_404_NOT_FOUND;
+    if (NULL == targetP)
+        return COAP_404_NOT_FOUND;
 
     // is the server asking for the full instance ?
     if (*numDataP == 0)
@@ -171,12 +167,13 @@ static uint8_t prv_security_read(lwm2m_context_t * contextP,
                               LWM2M_SECURITY_SMS_SERVER_NUMBER_ID,
                               LWM2M_SECURITY_SHORT_SERVER_ID,
                               LWM2M_SECURITY_HOLD_OFF_ID};
-        int nbRes = sizeof(resList)/sizeof(uint16_t);
+        int nbRes = sizeof(resList) / sizeof(uint16_t);
 
         *dataArrayP = lwm2m_data_new(nbRes);
-        if (*dataArrayP == NULL) return COAP_500_INTERNAL_SERVER_ERROR;
+        if (*dataArrayP == NULL)
+            return COAP_500_INTERNAL_SERVER_ERROR;
         *numDataP = nbRes;
-        for (i = 0 ; i < nbRes ; i++)
+        for (i = 0; i < nbRes; i++)
         {
             (*dataArrayP)[i].id = resList[i];
         }
@@ -199,15 +196,15 @@ static uint8_t prv_security_read(lwm2m_context_t * contextP,
     return result;
 }
 
-lwm2m_object_t * get_security_object()
+lwm2m_object_t *get_security_object()
 {
-    lwm2m_object_t * securityObj;
+    lwm2m_object_t *securityObj;
 
     securityObj = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
 
     if (NULL != securityObj)
     {
-        security_instance_t * targetP;
+        security_instance_t *targetP;
 
         memset(securityObj, 0, sizeof(lwm2m_object_t));
 
@@ -236,11 +233,11 @@ lwm2m_object_t * get_security_object()
     return securityObj;
 }
 
-void free_security_object(lwm2m_object_t * objectP)
+void free_security_object(lwm2m_object_t *objectP)
 {
     while (objectP->instanceList != NULL)
     {
-        security_instance_t * securityInstance = (security_instance_t *)objectP->instanceList;
+        security_instance_t *securityInstance = (security_instance_t *)objectP->instanceList;
         objectP->instanceList = objectP->instanceList->next;
         if (NULL != securityInstance->uri)
         {
@@ -251,10 +248,9 @@ void free_security_object(lwm2m_object_t * objectP)
     lwm2m_free(objectP);
 }
 
-char * get_server_uri(lwm2m_object_t * objectP,
-                      uint16_t secObjInstID)
+char *get_server_uri(lwm2m_object_t *objectP, uint16_t secObjInstID)
 {
-    security_instance_t * targetP = (security_instance_t *)LWM2M_LIST_FIND(objectP->instanceList, secObjInstID);
+    security_instance_t *targetP = (security_instance_t *)LWM2M_LIST_FIND(objectP->instanceList, secObjInstID);
 
     if (NULL != targetP)
     {

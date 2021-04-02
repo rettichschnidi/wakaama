@@ -15,7 +15,7 @@
  *    Toby Jaffey - Please refer to git log
  *    Scott Bertin, AMETEK, Inc. - Please refer to git log
  *    Tuve Nordius, Husqvarna Group - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
 /*
@@ -50,22 +50,20 @@
 
 #include "internals.h"
 #include <ctype.h>
+#include <float.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <float.h>
 
-
-int utils_textToInt(const uint8_t * buffer,
-                    int length,
-                    int64_t * dataP)
+int utils_textToInt(const uint8_t *buffer, int length, int64_t *dataP)
 {
     uint64_t result = 0;
     int sign = 1;
     int i = 0;
 
-    if (0 == length) return 0;
+    if (0 == length)
+        return 0;
 
     if (buffer[0] == '-')
     {
@@ -77,7 +75,8 @@ int utils_textToInt(const uint8_t * buffer,
     {
         if ('0' <= buffer[i] && buffer[i] <= '9')
         {
-            if (result > (UINT64_MAX / 10)) return 0;
+            if (result > (UINT64_MAX / 10))
+                return 0;
             result *= 10;
             result += buffer[i] - '0';
         }
@@ -88,7 +87,8 @@ int utils_textToInt(const uint8_t * buffer,
         i++;
     }
 
-    if (result > INT64_MAX + (uint64_t)(sign == -1 ? 1 : 0)) return 0;
+    if (result > INT64_MAX + (uint64_t)(sign == -1 ? 1 : 0))
+        return 0;
 
     if (sign == -1)
     {
@@ -102,20 +102,20 @@ int utils_textToInt(const uint8_t * buffer,
     return 1;
 }
 
-int utils_textToUInt(const uint8_t * buffer,
-                     int length,
-                     uint64_t * dataP)
+int utils_textToUInt(const uint8_t *buffer, int length, uint64_t *dataP)
 {
     uint64_t result = 0;
     int i = 0;
 
-    if (0 == length) return 0;
+    if (0 == length)
+        return 0;
 
     while (i < length)
     {
         if ('0' <= buffer[i] && buffer[i] <= '9')
         {
-            if (result > (UINT64_MAX / 10)) return 0;
+            if (result > (UINT64_MAX / 10))
+                return 0;
             result *= 10;
             result += buffer[i] - '0';
         }
@@ -131,16 +131,14 @@ int utils_textToUInt(const uint8_t * buffer,
     return 1;
 }
 
-int utils_textToFloat(const uint8_t * buffer,
-                      int length,
-                      double * dataP,
-                      bool allowExponential)
+int utils_textToFloat(const uint8_t *buffer, int length, double *dataP, bool allowExponential)
 {
     double result;
     int sign;
     int i;
 
-    if (0 == length) return 0;
+    if (0 == length)
+        return 0;
 
     if (buffer[0] == '-')
     {
@@ -154,14 +152,16 @@ int utils_textToFloat(const uint8_t * buffer,
     }
 
     /* Must have a decimal digit first after optional sign */
-    if (i >= length || !isdigit(buffer[i])) return 0;
+    if (i >= length || !isdigit(buffer[i]))
+        return 0;
 
     result = 0;
     while (i < length && buffer[i] != '.' && buffer[i] != 'e' && buffer[i] != 'E')
     {
         if (isdigit(buffer[i]))
         {
-            if (result > (DBL_MAX / 10)) return 0;
+            if (result > (DBL_MAX / 10))
+                return 0;
             result *= 10;
             result += (buffer[i] - '0');
         }
@@ -197,12 +197,15 @@ int utils_textToFloat(const uint8_t * buffer,
         int64_t exp;
         int res;
 
-        if (!allowExponential) return 0;
+        if (!allowExponential)
+            return 0;
 
         i++;
-        if (i < length && buffer[i] == '+') i++;
+        if (i < length && buffer[i] == '+')
+            i++;
         res = utils_textToInt(buffer + i, length - i, &exp);
-        if (res == 0) return 0;
+        if (res == 0)
+            return 0;
         if (exp > 0)
         {
             while (exp > 100)
@@ -240,55 +243,55 @@ int utils_textToFloat(const uint8_t * buffer,
             }
         }
     }
-    if (result > DBL_MAX) result = DBL_MAX; /* Keep the result finite */
+    if (result > DBL_MAX)
+        result = DBL_MAX; /* Keep the result finite */
 
     *dataP = result * sign;
     return 1;
 }
 
-int utils_textToObjLink(const uint8_t * buffer,
-                        int length,
-                        uint16_t * objectId,
-                        uint16_t * objectInstanceId)
+int utils_textToObjLink(const uint8_t *buffer, int length, uint16_t *objectId, uint16_t *objectInstanceId)
 {
     uint64_t object;
     uint64_t instance;
     int sep = 0;
-    while (sep < length
-        && buffer[sep] != ':')
+    while (sep < length && buffer[sep] != ':')
     {
         sep++;
     }
-    if (sep == 0 || sep == length) return 0;
-    if (!utils_textToUInt(buffer, sep, &object)) return 0;
-    if (!utils_textToUInt(buffer + sep + 1,
-                          length - sep - 1,
-                          &instance)) return 0;
-    if (object > LWM2M_MAX_ID || instance > LWM2M_MAX_ID) return 0;
+    if (sep == 0 || sep == length)
+        return 0;
+    if (!utils_textToUInt(buffer, sep, &object))
+        return 0;
+    if (!utils_textToUInt(buffer + sep + 1, length - sep - 1, &instance))
+        return 0;
+    if (object > LWM2M_MAX_ID || instance > LWM2M_MAX_ID)
+        return 0;
 
     *objectId = (uint16_t)object;
     *objectInstanceId = (uint16_t)instance;
     return 1;
 }
 
-size_t utils_intToText(int64_t data,
-                       uint8_t * string,
-                       size_t length)
+size_t utils_intToText(int64_t data, uint8_t *string, size_t length)
 {
     size_t result;
 
     if (data < 0)
     {
-        if (length == 0) return 0;
+        if (length == 0)
+            return 0;
         string[0] = '-';
         /*
          * Hack around the fact that -1 * INT64_MIN can not be represented as
          * int64_t.
          */
-        if (data == INT64_MIN) {
+        if (data == INT64_MIN)
+        {
             const char *const int64_min_str = "-9223372036854775808";
             const size_t int64_min_strlen = strlen(int64_min_str);
-            if (int64_min_strlen >= length) {
+            if (int64_min_strlen >= length)
+            {
                 return 0;
             }
             memcpy(string, "-9223372036854775808", int64_min_strlen);
@@ -296,7 +299,7 @@ size_t utils_intToText(int64_t data,
             return int64_min_strlen;
         }
         result = utils_uintToText((uint64_t)labs(data), string + 1, length - 1);
-        if(result != 0)
+        if (result != 0)
         {
             result += 1;
         }
@@ -309,24 +312,24 @@ size_t utils_intToText(int64_t data,
     return result;
 }
 
-size_t utils_uintToText(uint64_t data,
-                        uint8_t * string,
-                        size_t length)
+size_t utils_uintToText(uint64_t data, uint8_t *string, size_t length)
 {
     int index;
     size_t result;
 
-    if (length == 0) return 0;
+    if (length == 0)
+        return 0;
 
     index = length - 1;
     do
     {
-        string[index] = '0' + data%10;
+        string[index] = '0' + data % 10;
         data /= 10;
-        index --;
+        index--;
     } while (index >= 0 && data > 0);
 
-    if (data > 0) return 0;
+    if (data > 0)
+        return 0;
 
     index++;
 
@@ -341,10 +344,7 @@ size_t utils_uintToText(uint64_t data,
     return result;
 }
 
-size_t utils_floatToText(double data,
-                         uint8_t * string,
-                         size_t length,
-                         bool allowExponential)
+size_t utils_floatToText(double data, uint8_t *string, size_t length, bool allowExponential)
 {
     uint64_t intPart;
     double decPart;
@@ -357,7 +357,8 @@ size_t utils_floatToText(double data,
     int precisionFactor = 1; /* Adjusts for inaccuracies caused by power of 10 operations. */
     unsigned digits;
 
-    if (!length || !string) return 0;
+    if (!length || !string)
+        return 0;
 
     if (data < 0)
     {
@@ -369,32 +370,38 @@ size_t utils_floatToText(double data,
     if (data < DBL_MIN)
     {
         /* Intentionally not distinguishing between +0.0 and -0.0. */
-        if (length < 3) return 0;
+        if (length < 3)
+            return 0;
         string[0] = '0';
         string[1] = '.';
         string[2] = '0';
-        if (length > 3) string[3] = '\0';
+        if (length > 3)
+            string[3] = '\0';
         return 3;
     }
-    else if (data > DBL_MAX )
+    else if (data > DBL_MAX)
     {
         /* Note that this is not valid for JSON. */
-        if (length < 3 + head) return 0;
+        if (length < 3 + head)
+            return 0;
         string[head++] = 'i';
         string[head++] = 'n';
         string[head++] = 'f';
-        if (length > head) string[head] = '\0';
+        if (length > head)
+            string[head] = '\0';
         return head;
     }
     else if (isnan(data))
     {
         /* NaN */
         /* Note that this is not valid for JSON. */
-        if (length < 3 + head) return 0;
+        if (length < 3 + head)
+            return 0;
         string[head++] = 'n';
         string[head++] = 'a';
         string[head++] = 'n';
-        if (length > head) string[head] = '\0';
+        if (length > head)
+            string[head] = '\0';
         return head;
     }
 
@@ -426,7 +433,7 @@ size_t utils_floatToText(double data,
             {
                 expLen = 4;
             }
-            else if(zeros >= 10)
+            else if (zeros >= 10)
             {
                 expLen = 3;
             }
@@ -495,7 +502,7 @@ size_t utils_floatToText(double data,
             {
                 expLen = 5;
             }
-            else if(zeros <= -10)
+            else if (zeros <= -10)
             {
                 expLen = 4;
             }
@@ -553,7 +560,8 @@ size_t utils_floatToText(double data,
         do
         {
             digits++;
-            if (head + expLen + digits > length) break;
+            if (head + expLen + digits > length)
+                break;
             decPart *= 10;
             roundCheck *= 10;
             noiseFloor *= 10;
@@ -567,38 +575,45 @@ size_t utils_floatToText(double data,
 
     /* Put out the significant digits left of the decimal point or zeros. */
     res = utils_uintToText(intPart, string + head, length - head);
-    if (res == 0) return 0;
+    if (res == 0)
+        return 0;
     head += res;
 
-    if (decPart <= noiseFloor
-     || (!allowExponential && -zeros >= (int)(length - head)))
+    if (decPart <= noiseFloor || (!allowExponential && -zeros >= (int)(length - head)))
     {
         /* Only 0s right of the significant digits */
         if (!allowExponential && zeros > 0)
         {
-            if (head + zeros > length) return 0;
+            if (head + zeros > length)
+                return 0;
             memset(string + head, '0', zeros);
             head += zeros;
         }
         /* Add as much of ".0" as space permits */
-        if (head < length) string[head++] = '.';
-        if (head < length) string[head++] = '0';
-        if (head < length) string[head] = '\0';
+        if (head < length)
+            string[head++] = '.';
+        if (head < length)
+            string[head++] = '0';
+        if (head < length)
+            string[head] = '\0';
         return head;
     }
 
     if (!allowExponential && zeros < 0)
     {
         /* Add "." plus leading 0s. Leaving one off to be added back later. */
-        if (head - zeros > length) return 0;
+        if (head - zeros > length)
+            return 0;
         string[head] = '.';
-        if (zeros < -1) memset(string + head + 1, '0', -(zeros) - 1);
+        if (zeros < -1)
+            memset(string + head + 1, '0', -(zeros)-1);
         head -= zeros;
     }
 
     /* Digits for the fractional part. */
     res = utils_uintToText((uint64_t)decPart, string + head, length - head);
-    if (!res) return 0;
+    if (!res)
+        return 0;
 
     // replace the leading 1 with a decimal point or 0
     if (!allowExponential && zeros < 0)
@@ -613,41 +628,45 @@ size_t utils_floatToText(double data,
 
     if (allowExponential && zeros)
     {
-        if (head + expLen > length) return 0;
+        if (head + expLen > length)
+            return 0;
         string[head++] = 'e';
         res = utils_intToText(zeros, string + head, length - head);
-        if (res == 0) return 0;
+        if (res == 0)
+            return 0;
         head += res;
     }
 
     return head;
 }
 
-size_t utils_objLinkToText(uint16_t objectId,
-                           uint16_t objectInstanceId,
-                           uint8_t * string,
-                           size_t length)
+size_t utils_objLinkToText(uint16_t objectId, uint16_t objectInstanceId, uint8_t *string, size_t length)
 {
     size_t head;
     size_t res = utils_uintToText(objectId, string, length);
-    if (!res) return 0;
+    if (!res)
+        return 0;
     head = res;
 
-    if (length - head < 1) return 0;
+    if (length - head < 1)
+        return 0;
     string[head++] = ':';
 
     res = utils_uintToText(objectInstanceId, string + head, length - head);
-    if (!res) return 0;
+    if (!res)
+        return 0;
 
     return head + res;
 }
 
-lwm2m_version_t utils_stringToVersion(uint8_t * buffer,
-                                      size_t length)
+lwm2m_version_t utils_stringToVersion(uint8_t *buffer, size_t length)
 {
-    if (length == 0) return VERSION_MISSING;
-    if (length != 3) return VERSION_UNRECOGNIZED;
-    if (buffer[1] != '.') return VERSION_UNRECOGNIZED;
+    if (length == 0)
+        return VERSION_MISSING;
+    if (length != 3)
+        return VERSION_UNRECOGNIZED;
+    if (buffer[1] != '.')
+        return VERSION_UNRECOGNIZED;
 
     switch (buffer[0])
     {
@@ -669,11 +688,11 @@ lwm2m_version_t utils_stringToVersion(uint8_t * buffer,
     return VERSION_UNRECOGNIZED;
 }
 
-lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
-                                      size_t length)
+lwm2m_binding_t utils_stringToBinding(uint8_t *buffer, size_t length)
 {
 #ifdef LWM2M_VERSION_1_0
-    if (length == 0) return BINDING_UNKNOWN;
+    if (length == 0)
+        return BINDING_UNKNOWN;
 
     switch (buffer[0])
     {
@@ -686,9 +705,9 @@ lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
             switch (buffer[1])
             {
             case 'Q':
-                 return BINDING_UQ;
+                return BINDING_UQ;
             case 'S':
-                 return BINDING_US;
+                return BINDING_US;
             default:
                 break;
             }
@@ -704,24 +723,24 @@ lwm2m_binding_t utils_stringToBinding(uint8_t * buffer,
         }
         break;
 
-        case 'S':
-            switch (length)
+    case 'S':
+        switch (length)
+        {
+        case 1:
+            return BINDING_S;
+        case 2:
+            if (buffer[1] == 'Q')
             {
-            case 1:
-                return BINDING_S;
-            case 2:
-                if (buffer[1] == 'Q')
-                {
-                    return BINDING_SQ;
-                }
-                break;
-            default:
-                break;
+                return BINDING_SQ;
             }
             break;
-
         default:
             break;
+        }
+        break;
+
+    default:
+        break;
     }
 
     return BINDING_UNKNOWN;
@@ -759,7 +778,7 @@ lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
 {
     lwm2m_media_type_t result = LWM2M_CONTENT_TEXT;
     // Here we just check the content type is a valid value for LWM2M
-    switch((uint16_t)type)
+    switch ((uint16_t)type)
     {
     case TEXT_PLAIN:
         break;
@@ -795,12 +814,8 @@ lwm2m_media_type_t utils_convertMediaType(coap_content_type_t type)
     return result;
 }
 
-uint8_t utils_getResponseFormat(uint8_t accept_num,
-                                const uint16_t *accept,
-                                int numData,
-                                const lwm2m_data_t *dataP,
-                                bool singleResource,
-                                lwm2m_media_type_t *format)
+uint8_t utils_getResponseFormat(uint8_t accept_num, const uint16_t *accept, int numData, const lwm2m_data_t *dataP,
+                                bool singleResource, lwm2m_media_type_t *format)
 {
     uint8_t result = COAP_205_CONTENT;
     bool singular;
@@ -829,7 +844,7 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
     {
         uint8_t i;
         bool found = false;
-        for(i = 0; i < accept_num && !found; i++)
+        for (i = 0; i < accept_num && !found; i++)
         {
             switch (accept[i])
             {
@@ -884,7 +899,8 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
                 break;
             }
         }
-        if (!found) result = COAP_406_NOT_ACCEPTABLE;
+        if (!found)
+            result = COAP_406_NOT_ACCEPTABLE;
     }
     else
     {
@@ -903,14 +919,12 @@ uint8_t utils_getResponseFormat(uint8_t accept_num,
 }
 
 #ifdef LWM2M_CLIENT_MODE
-lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP,
-                                  void * fromSessionH)
+lwm2m_server_t *utils_findServer(lwm2m_context_t *contextP, void *fromSessionH)
 {
-    lwm2m_server_t * targetP;
+    lwm2m_server_t *targetP;
 
     targetP = contextP->serverList;
-    while (targetP != NULL
-        && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
+    while (targetP != NULL && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
     {
         targetP = targetP->next;
     }
@@ -919,16 +933,14 @@ lwm2m_server_t * utils_findServer(lwm2m_context_t * contextP,
 }
 #endif
 
-lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
-                                           void * fromSessionH)
+lwm2m_server_t *utils_findBootstrapServer(lwm2m_context_t *contextP, void *fromSessionH)
 {
 #ifdef LWM2M_CLIENT_MODE
 
-    lwm2m_server_t * targetP;
+    lwm2m_server_t *targetP;
 
     targetP = contextP->bootstrapServerList;
-    while (targetP != NULL
-        && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
+    while (targetP != NULL && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
     {
         targetP = targetP->next;
     }
@@ -943,14 +955,12 @@ lwm2m_server_t * utils_findBootstrapServer(lwm2m_context_t * contextP,
 }
 
 #ifndef LWM2M_CLIENT_MODE
-lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP,
-                                  void * fromSessionH)
+lwm2m_client_t *utils_findClient(lwm2m_context_t *contextP, void *fromSessionH)
 {
-    lwm2m_client_t * targetP;
+    lwm2m_client_t *targetP;
 
     targetP = contextP->clientList;
-    while (targetP != NULL
-        && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
+    while (targetP != NULL && false == lwm2m_session_is_equal(targetP->sessionH, fromSessionH, contextP->userData))
     {
         targetP = targetP->next;
     }
@@ -959,59 +969,54 @@ lwm2m_client_t * utils_findClient(lwm2m_context_t * contextP,
 }
 #endif
 
-int utils_isAltPathValid(const char * altPath)
+int utils_isAltPathValid(const char *altPath)
 {
     int i;
 
-    if (altPath == NULL) return 0;
+    if (altPath == NULL)
+        return 0;
 
-    if (altPath[0] != '/') return 0;
+    if (altPath[0] != '/')
+        return 0;
 
-    for (i = 1 ; altPath[i] != 0 ; i++)
+    for (i = 1; altPath[i] != 0; i++)
     {
         // TODO: Support multi-segment alternative path
-        if (altPath[i] == '/') return 0;
+        if (altPath[i] == '/')
+            return 0;
         // TODO: Check needs for sub-delims, ':' and '@'
-        if ((altPath[i] < 'A' || altPath[i] > 'Z')      // ALPHA
-         && (altPath[i] < 'a' || altPath[i] > 'z')
-         && (altPath[i] < '0' || altPath[i] > '9')      // DIGIT
-         && (altPath[i] != '-')                         // Other unreserved
-         && (altPath[i] != '.')
-         && (altPath[i] != '_')
-         && (altPath[i] != '~')
-         && (altPath[i] != '%'))                        // pct_encoded
+        if ((altPath[i] < 'A' || altPath[i] > 'Z')                                              // ALPHA
+            && (altPath[i] < 'a' || altPath[i] > 'z') && (altPath[i] < '0' || altPath[i] > '9') // DIGIT
+            && (altPath[i] != '-')                                                              // Other unreserved
+            && (altPath[i] != '.') && (altPath[i] != '_') && (altPath[i] != '~') && (altPath[i] != '%')) // pct_encoded
         {
             return 0;
         }
-
     }
     return 1;
 }
 
 // copy a string in a buffer.
 // return the number of copied bytes or -1 if the buffer is not large enough
-int utils_stringCopy(char * buffer,
-                     size_t length,
-                     const char * str)
+int utils_stringCopy(char *buffer, size_t length, const char *str)
 {
     size_t i;
 
-    for (i = 0 ; i < length && str[i] != 0 ; i++)
+    for (i = 0; i < length && str[i] != 0; i++)
     {
         buffer[i] = str[i];
     }
 
-    if (i == length) return -1;
+    if (i == length)
+        return -1;
 
     buffer[i] = 0;
 
     return (int)i;
 }
 
-void utils_copyValue(void * dst,
-                     const void * src,
-                     size_t len)
-{		
+void utils_copyValue(void *dst, const void *src, size_t len)
+{
 #ifdef LWM2M_BIG_ENDIAN
     memcpy(dst, src, len);
 #else
@@ -1026,19 +1031,14 @@ void utils_copyValue(void * dst,
 #endif
 }
 
-
 #define PRV_B64_PADDING '='
 
-static char b64Alphabet[64] =
-{
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-    'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
-};
+static char b64Alphabet[64] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                               'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+                               'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                               'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
 
-static void prv_encodeBlock(const uint8_t input[3],
-                            uint8_t output[4])
+static void prv_encodeBlock(const uint8_t input[3], uint8_t output[4])
 {
     output[0] = b64Alphabet[input[0] >> 2];
     output[1] = b64Alphabet[((input[0] & 0x03) << 4) | (input[1] >> 4)];
@@ -1051,15 +1051,13 @@ size_t utils_base64GetSize(size_t dataLen)
     size_t result_len;
 
     result_len = 4 * (dataLen / 3);
-    if (dataLen % 3) result_len += 4;
+    if (dataLen % 3)
+        result_len += 4;
 
     return result_len;
 }
 
-size_t utils_base64Encode(const uint8_t * dataP,
-                          size_t dataLen, 
-                          uint8_t * bufferP,
-                          size_t bufferLen)
+size_t utils_base64Encode(const uint8_t *dataP, size_t dataLen, uint8_t *bufferP, size_t bufferLen)
 {
     unsigned int data_index;
     unsigned int result_index;
@@ -1067,7 +1065,8 @@ size_t utils_base64Encode(const uint8_t * dataP,
 
     result_len = utils_base64GetSize(dataLen);
 
-    if (result_len > bufferLen) return 0;
+    if (result_len > bufferLen)
+        return 0;
 
     data_index = 0;
     result_index = 0;
@@ -1101,7 +1100,7 @@ size_t utils_base64Encode(const uint8_t * dataP,
     return result_len;
 }
 
-size_t utils_base64GetDecodedSize(const char * dataP, size_t dataLen)
+size_t utils_base64GetDecodedSize(const char *dataP, size_t dataLen)
 {
     size_t result;
 
@@ -1135,59 +1134,72 @@ size_t utils_base64GetDecodedSize(const char * dataP, size_t dataLen)
 static uint8_t prv_base64Value(char digit)
 {
     uint8_t result = 0xFF;
-    if (digit >= 'A' && digit <= 'Z') result = digit - 'A';
-    else if (digit >= 'a' && digit <= 'z') result = digit - 'a' + 26;
-    else if (digit >= '0' && digit <= '9') result = digit - '0' + 52;
-    else if (digit == '+') result = 62;
-    else if (digit == '/') result = 63;
+    if (digit >= 'A' && digit <= 'Z')
+        result = digit - 'A';
+    else if (digit >= 'a' && digit <= 'z')
+        result = digit - 'a' + 26;
+    else if (digit >= '0' && digit <= '9')
+        result = digit - '0' + 52;
+    else if (digit == '+')
+        result = 62;
+    else if (digit == '/')
+        result = 63;
     return result;
 }
 
-size_t utils_base64Decode(const char * dataP, size_t dataLen, uint8_t * bufferP, size_t bufferLen)
+size_t utils_base64Decode(const char *dataP, size_t dataLen, uint8_t *bufferP, size_t bufferLen)
 {
     size_t dataIndex;
     size_t bufferIndex;
     size_t decodedSize = utils_base64GetDecodedSize(dataP, dataLen);
 
-    if(decodedSize > bufferLen) return 0;
+    if (decodedSize > bufferLen)
+        return 0;
 
     dataIndex = 0;
     bufferIndex = 0;
     while (dataIndex < dataLen)
     {
         uint8_t v1, v2, v3, v4;
-        if (dataLen - dataIndex < 2) return 0;
+        if (dataLen - dataIndex < 2)
+            return 0;
         v1 = prv_base64Value(dataP[dataIndex++]);
-        if (v1 >= 64) return 0;
+        if (v1 >= 64)
+            return 0;
         v2 = prv_base64Value(dataP[dataIndex++]);
-        if (v2 >= 64) return 0;
+        if (v2 >= 64)
+            return 0;
         bufferP[bufferIndex++] = (v1 << 2) + (v2 >> 4);
         if (dataIndex < dataLen)
         {
             if (dataP[dataIndex] != PRV_B64_PADDING)
             {
                 v3 = prv_base64Value(dataP[dataIndex++]);
-                if (v3 >= 64) return 0;
+                if (v3 >= 64)
+                    return 0;
                 bufferP[bufferIndex++] = (v2 << 4) + (v3 >> 2);
                 if (dataIndex < dataLen)
                 {
                     if (dataP[dataIndex] != PRV_B64_PADDING)
                     {
                         v4 = prv_base64Value(dataP[dataIndex++]);
-                        if (v4 >= 64) return 0;
+                        if (v4 >= 64)
+                            return 0;
                         bufferP[bufferIndex++] = (v3 << 6) + v4;
                     }
                     else
                     {
-                        if (bufferIndex != decodedSize) return 0;
+                        if (bufferIndex != decodedSize)
+                            return 0;
                         dataIndex++;
                     }
                 }
             }
             else
             {
-                if (bufferIndex != decodedSize) return 0;
-                dataIndex+=2;
+                if (bufferIndex != decodedSize)
+                    return 0;
+                dataIndex += 2;
             }
         }
     }

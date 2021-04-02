@@ -55,33 +55,33 @@
 
 */
 
-#include "liblwm2m.h"
 #include "connection.h"
+#include "liblwm2m.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <sys/select.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/stat.h>
+#include <ctype.h>
 #include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-extern lwm2m_object_t * get_object_device(void);
-extern void free_object_device(lwm2m_object_t * objectP);
-extern lwm2m_object_t * get_server_object(void);
-extern void free_server_object(lwm2m_object_t * object);
-extern lwm2m_object_t * get_security_object(void);
-extern void free_security_object(lwm2m_object_t * objectP);
-extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
-extern lwm2m_object_t * get_test_object(void);
-extern void free_test_object(lwm2m_object_t * object);
+extern lwm2m_object_t *get_object_device(void);
+extern void free_object_device(lwm2m_object_t *objectP);
+extern lwm2m_object_t *get_server_object(void);
+extern void free_server_object(lwm2m_object_t *object);
+extern lwm2m_object_t *get_security_object(void);
+extern void free_security_object(lwm2m_object_t *objectP);
+extern char *get_server_uri(lwm2m_object_t *objectP, uint16_t secObjInstID);
+extern lwm2m_object_t *get_test_object(void);
+extern void free_test_object(lwm2m_object_t *object);
 
 #define MAX_PACKET_SIZE 2048
 
@@ -90,50 +90,47 @@ static int g_quit = 0;
 
 typedef struct
 {
-    lwm2m_object_t * securityObjP;
+    lwm2m_object_t *securityObjP;
     int sock;
-    connection_t * connList;
+    connection_t *connList;
     int addressFamily;
 } client_data_t;
 
+void handle_sigint(int signum) { g_quit = 1; }
 
-void handle_sigint(int signum)
+void *lwm2m_connect_server(uint16_t secObjInstID, void *userData)
 {
-    g_quit = 1;
-}
-
-void * lwm2m_connect_server(uint16_t secObjInstID,
-                            void * userData)
-{
-    client_data_t * dataP;
-    char * uri;
-    char * host;
-    char * port;
-    connection_t * newConnP = NULL;
+    client_data_t *dataP;
+    char *uri;
+    char *host;
+    char *port;
+    connection_t *newConnP = NULL;
 
     dataP = (client_data_t *)userData;
 
     uri = get_server_uri(dataP->securityObjP, secObjInstID);
 
-    if (uri == NULL) return NULL;
+    if (uri == NULL)
+        return NULL;
 
     fprintf(stdout, "Connecting to %s\r\n", uri);
 
     // parse uri in the form "coaps://[host]:[port]"
     if (0 == strncmp(uri, "coaps://", strlen("coaps://")))
     {
-        host = uri+strlen("coaps://");
+        host = uri + strlen("coaps://");
     }
     else if (0 == strncmp(uri, "coap://", strlen("coap://")))
     {
-        host = uri+strlen("coap://");
+        host = uri + strlen("coap://");
     }
     else
     {
         goto exit;
     }
     port = strrchr(host, ':');
-    if (port == NULL) goto exit;
+    if (port == NULL)
+        goto exit;
     // remove brackets
     if (host[0] == '[')
     {
@@ -142,17 +139,20 @@ void * lwm2m_connect_server(uint16_t secObjInstID,
         {
             *(port - 1) = 0;
         }
-        else goto exit;
+        else
+            goto exit;
     }
     // split strings
     *port = 0;
     port++;
 
     newConnP = connection_create(dataP->connList, dataP->sock, host, port, dataP->addressFamily);
-    if (newConnP == NULL) {
+    if (newConnP == NULL)
+    {
         fprintf(stderr, "Connection creation failed.\r\n");
     }
-    else {
+    else
+    {
         dataP->connList = newConnP;
     }
 
@@ -161,11 +161,10 @@ exit:
     return (void *)newConnP;
 }
 
-void lwm2m_close_connection(void * sessionH,
-                            void * userData)
+void lwm2m_close_connection(void *sessionH, void *userData)
 {
-    client_data_t * app_data;
-    connection_t * targetP;
+    client_data_t *app_data;
+    connection_t *targetP;
 
     app_data = (client_data_t *)userData;
     targetP = (connection_t *)sessionH;
@@ -177,7 +176,7 @@ void lwm2m_close_connection(void * sessionH,
     }
     else
     {
-        connection_t * parentP;
+        connection_t *parentP;
 
         parentP = app_data->connList;
         while (parentP != NULL && parentP->next != targetP)
@@ -203,12 +202,12 @@ void print_usage(void)
     fprintf(stdout, "\r\n");
 }
 
-void print_state(lwm2m_context_t * lwm2mH)
+void print_state(lwm2m_context_t *lwm2mH)
 {
-    lwm2m_server_t * targetP;
+    lwm2m_server_t *targetP;
 
     fprintf(stderr, "State: ");
-    switch(lwm2mH->state)
+    switch (lwm2mH->state)
     {
     case STATE_INITIAL:
         fprintf(stderr, "STATE_INITIAL");
@@ -243,12 +242,12 @@ void print_state(lwm2m_context_t * lwm2mH)
     else
     {
         fprintf(stderr, "Bootstrap Servers:\r\n");
-        for (targetP = lwm2mH->bootstrapServerList ; targetP != NULL ; targetP = targetP->next)
+        for (targetP = lwm2mH->bootstrapServerList; targetP != NULL; targetP = targetP->next)
         {
             fprintf(stderr, " - Security Object ID %d", targetP->secObjInstID);
             fprintf(stderr, "\tHold Off Time: %lu s", (unsigned long)targetP->lifetime);
             fprintf(stderr, "\tstatus: ");
-            switch(targetP->status)
+            switch (targetP->status)
             {
             case STATE_DEREGISTERED:
                 fprintf(stderr, "DEREGISTERED\r\n");
@@ -282,11 +281,11 @@ void print_state(lwm2m_context_t * lwm2mH)
     else
     {
         fprintf(stderr, "LWM2M Servers:\r\n");
-        for (targetP = lwm2mH->serverList ; targetP != NULL ; targetP = targetP->next)
+        for (targetP = lwm2mH->serverList; targetP != NULL; targetP = targetP->next)
         {
             fprintf(stderr, " - Server ID %d", targetP->shortID);
             fprintf(stderr, "\tstatus: ");
-            switch(targetP->status)
+            switch (targetP->status)
             {
             case STATE_DEREGISTERED:
                 fprintf(stderr, "DEREGISTERED\r\n");
@@ -295,7 +294,8 @@ void print_state(lwm2m_context_t * lwm2mH)
                 fprintf(stderr, "REGISTRATION PENDING\r\n");
                 break;
             case STATE_REGISTERED:
-                fprintf(stderr, "REGISTERED\tlocation: \"%s\"\tLifetime: %lus\r\n", targetP->location, (unsigned long)targetP->lifetime);
+                fprintf(stderr, "REGISTERED\tlocation: \"%s\"\tLifetime: %lus\r\n", targetP->location,
+                        (unsigned long)targetP->lifetime);
                 break;
             case STATE_REG_UPDATE_PENDING:
                 fprintf(stderr, "REGISTRATION UPDATE PENDING\r\n");
@@ -322,11 +322,11 @@ void print_state(lwm2m_context_t * lwm2mH)
 int main(int argc, char *argv[])
 {
     client_data_t data;
-    lwm2m_context_t * lwm2mH = NULL;
-    lwm2m_object_t * objArray[OBJ_COUNT];
+    lwm2m_context_t *lwm2mH = NULL;
+    lwm2m_object_t *objArray[OBJ_COUNT];
 
-    const char * localPort = "56830";
-    char * name = "testlwm2mclient";
+    const char *localPort = "56830";
+    char *name = "testlwm2mclient";
 
     int result;
     int opt;
@@ -338,9 +338,7 @@ int main(int argc, char *argv[])
     opt = 1;
     while (opt < argc)
     {
-        if (argv[opt] == NULL
-            || argv[opt][0] != '-'
-            || argv[opt][2] != 0)
+        if (argv[opt] == NULL || argv[opt][0] != '-' || argv[opt][2] != 0)
         {
             print_usage();
             return 0;
@@ -487,7 +485,7 @@ int main(int argc, char *argv[])
         {
             if (errno != EINTR)
             {
-              fprintf(stderr, "Error in select(): %d %s\r\n", errno, strerror(errno));
+                fprintf(stderr, "Error in select(): %d %s\r\n", errno, strerror(errno));
             }
         }
         else if (result > 0)
@@ -514,13 +512,13 @@ int main(int argc, char *argv[])
                 {
                     fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
                 }
-                else if (numBytes >= MAX_PACKET_SIZE) 
+                else if (numBytes >= MAX_PACKET_SIZE)
                 {
                     fprintf(stderr, "Received packet >= MAX_PACKET_SIZE\r\n");
-                } 
+                }
                 else if (0 < numBytes)
                 {
-                    connection_t * connP;
+                    connection_t *connP;
 
                     connP = connection_find(data.connList, &addr, addrLen);
                     if (connP != NULL)

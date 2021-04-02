@@ -13,16 +13,16 @@
  * Contributors:
  *    David Navarro, Intel Corporation - initial API and implementation
  *    Pascal Rieux - Please refer to git log
- *    
+ *
  *******************************************************************************/
 
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 #include "connection.h"
 #include "commandline.h"
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
-int create_socket(const char * portStr, int addressFamily)
+int create_socket(const char *portStr, int addressFamily)
 {
     int s = -1;
     struct addrinfo hints;
@@ -39,7 +39,7 @@ int create_socket(const char * portStr, int addressFamily)
         return -1;
     }
 
-    for(p = res ; p != NULL && s == -1 ; p = p->ai_next)
+    for (p = res; p != NULL && s == -1; p = p->ai_next)
     {
         s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         if (s >= 0)
@@ -57,17 +57,14 @@ int create_socket(const char * portStr, int addressFamily)
     return s;
 }
 
-connection_t * connection_find(connection_t * connList,
-                               struct sockaddr_storage * addr,
-                               size_t addrLen)
+connection_t *connection_find(connection_t *connList, struct sockaddr_storage *addr, size_t addrLen)
 {
-    connection_t * connP;
+    connection_t *connP;
 
     connP = connList;
     while (connP != NULL)
     {
-        if ((connP->addrLen == addrLen)
-         && (memcmp(&(connP->addr), addr, addrLen) == 0))
+        if ((connP->addrLen == addrLen) && (memcmp(&(connP->addr), addr, addrLen) == 0))
         {
             return connP;
         }
@@ -77,12 +74,9 @@ connection_t * connection_find(connection_t * connList,
     return connP;
 }
 
-connection_t * connection_new_incoming(connection_t * connList,
-                                       int sock,
-                                       struct sockaddr * addr,
-                                       size_t addrLen)
+connection_t *connection_new_incoming(connection_t *connList, int sock, struct sockaddr *addr, size_t addrLen)
 {
-    connection_t * connP;
+    connection_t *connP;
 
     connP = (connection_t *)lwm2m_malloc(sizeof(connection_t));
     if (connP != NULL)
@@ -96,11 +90,7 @@ connection_t * connection_new_incoming(connection_t * connList,
     return connP;
 }
 
-connection_t * connection_create(connection_t * connList,
-                                 int sock,
-                                 char * host,
-                                 char * port,
-                                 int addressFamily)
+connection_t *connection_create(connection_t *connList, int sock, char *host, char *port, int addressFamily)
 {
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
@@ -108,17 +98,18 @@ connection_t * connection_create(connection_t * connList,
     int s;
     struct sockaddr *sa;
     socklen_t sl;
-    connection_t * connP = NULL;
+    connection_t *connP = NULL;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = addressFamily;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL) return NULL;
+    if (0 != getaddrinfo(host, port, &hints, &servinfo) || servinfo == NULL)
+        return NULL;
 
     // we test the various addresses
     s = -1;
-    for(p = servinfo ; p != NULL && s == -1 ; p = p->ai_next)
+    for (p = servinfo; p != NULL && s == -1; p = p->ai_next)
     {
         s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         if (s >= 0)
@@ -137,18 +128,19 @@ connection_t * connection_create(connection_t * connList,
         connP = connection_new_incoming(connList, sock, sa, sl);
         close(s);
     }
-    if (NULL != servinfo) {
+    if (NULL != servinfo)
+    {
         freeaddrinfo(servinfo);
     }
 
     return connP;
 }
 
-void connection_free(connection_t * connList)
+void connection_free(connection_t *connList)
 {
     while (connList != NULL)
     {
-        connection_t * nextP;
+        connection_t *nextP;
 
         nextP = connList->next;
         lwm2m_free(connList);
@@ -157,9 +149,7 @@ void connection_free(connection_t * connList)
     }
 }
 
-int connection_send(connection_t *connP,
-                    uint8_t * buffer,
-                    size_t length)
+int connection_send(connection_t *connP, uint8_t *buffer, size_t length)
 {
     int nbSent;
     size_t offset;
@@ -191,40 +181,37 @@ int connection_send(connection_t *connP,
     offset = 0;
     while (offset != length)
     {
-        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
-        if (nbSent == -1) return -1;
+        nbSent =
+            sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
+        if (nbSent == -1)
+            return -1;
         offset += nbSent;
     }
     return 0;
 }
 
-uint8_t lwm2m_buffer_send(void * sessionH,
-                          uint8_t * buffer,
-                          size_t length,
-                          void * userdata)
+uint8_t lwm2m_buffer_send(void *sessionH, uint8_t *buffer, size_t length, void *userdata)
 {
-    connection_t * connP = (connection_t*) sessionH;
+    connection_t *connP = (connection_t *)sessionH;
 
     (void)userdata; /* unused */
 
     if (connP == NULL)
     {
         fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
-        return COAP_500_INTERNAL_SERVER_ERROR ;
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     if (-1 == connection_send(connP, buffer, length))
     {
         fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
-        return COAP_500_INTERNAL_SERVER_ERROR ;
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     return COAP_NO_ERROR;
 }
 
-bool lwm2m_session_is_equal(void * session1,
-                            void * session2,
-                            void * userData)
+bool lwm2m_session_is_equal(void *session1, void *session2, void *userData)
 {
     (void)userData; /* unused */
 

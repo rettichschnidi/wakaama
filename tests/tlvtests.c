@@ -16,43 +16,41 @@
  *
  *******************************************************************************/
 
-#include "tests.h"
 #include "CUnit/Basic.h"
 #include "internals.h"
 #include "liblwm2m.h"
 #include "memtest.h"
-
+#include "tests.h"
 
 static void test_tlv_new(void)
 {
-   MEMORY_TRACE_BEFORE;
-   lwm2m_data_t *dataP =  lwm2m_data_new(10);
-   CU_ASSERT_PTR_NOT_NULL(dataP);
-   MEMORY_TRACE_AFTER(<);
-   lwm2m_data_free(10, dataP);
+    MEMORY_TRACE_BEFORE;
+    lwm2m_data_t *dataP = lwm2m_data_new(10);
+    CU_ASSERT_PTR_NOT_NULL(dataP);
+    MEMORY_TRACE_AFTER(<);
+    lwm2m_data_free(10, dataP);
 }
 
 static void test_tlv_free(void)
 {
-   MEMORY_TRACE_BEFORE;
-   lwm2m_data_t *dataP =  lwm2m_data_new(10);
-   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
-   lwm2m_data_free(10, dataP);
-   MEMORY_TRACE_AFTER_EQ;
+    MEMORY_TRACE_BEFORE;
+    lwm2m_data_t *dataP = lwm2m_data_new(10);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP);
+    lwm2m_data_free(10, dataP);
+    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_decodeTLV()
 {
     MEMORY_TRACE_BEFORE;
     uint8_t data1[] = {0xC3, 55, 1, 2, 3};
-    uint8_t data2[] = {0x28, 2, 3, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    uint8_t data3[0x194] = {0x90, 33, 1, 0x90 };
+    uint8_t data2[] = {0x28, 2, 3, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    uint8_t data3[0x194] = {0x90, 33, 1, 0x90};
     lwm2m_data_type_t type;
     uint16_t id = 0;
-    size_t   index = 0;
-    size_t   length = 0;
+    size_t index = 0;
+    size_t length = 0;
     int result;
-
 
     result = lwm2m_decode_TLV(data1, sizeof(data1) - 1, &type, &id, &index, &length);
     CU_ASSERT_EQUAL(result, 0);
@@ -93,7 +91,9 @@ static void test_tlv_parse()
     // Resource 55 {1, 2, 3}
     uint8_t data1[] = {0xC3, 55, 1, 2, 3};
     // Instance 0x203 {Resource 55 {1, 2, 3}, Resource 66 {4, 5, 6, 7, 8, 9, 10, 11, 12 } }
-    uint8_t data2[] = {0x28, 2, 3, 17, 0xC3, 55, 1, 2, 3, 0xC8, 66, 9, 4, 5, 6, 7, 8, 9, 10, 11, 12, };
+    uint8_t data2[] = {
+        0x28, 2, 3, 17, 0xC3, 55, 1, 2, 3, 0xC8, 66, 9, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+    };
     // Instance 11 {MultiResource 11 {ResourceInstance 0 {1, 2, 3}, ResourceInstance 1 {4, 5, 6, 7, 8, 9, ... } }
     uint8_t data3[174] = {0x08, 11, 171, 0x88, 77, 168, 0x43, 0, 1, 2, 3, 0x48, 1, 160, 4, 5, 6, 7, 8, 9};
     int result;
@@ -168,9 +168,7 @@ static void test_tlv_serialize()
     lwm2m_data_t *tlvRscInstP;
     uint8_t data1[] = {1, 2, 3, 4};
     uint8_t data2[170] = {5, 6, 7, 8};
-    uint8_t* buffer;
-
-
+    uint8_t *buffer;
 
     tlvSubP = lwm2m_data_new(2);
     CU_ASSERT_PTR_NOT_NULL_FATAL(tlvSubP);
@@ -231,228 +229,228 @@ static void test_tlv_serialize()
 
 static void test_tlv_int(void)
 {
-   MEMORY_TRACE_BEFORE;
-   int64_t value;
-   int result;
-   lwm2m_data_t *dataP =  lwm2m_data_new(1);
-   CU_ASSERT_PTR_NOT_NULL(dataP);
+    MEMORY_TRACE_BEFORE;
+    int64_t value;
+    int result;
+    lwm2m_data_t *dataP = lwm2m_data_new(1);
+    CU_ASSERT_PTR_NOT_NULL(dataP);
 
-   result = lwm2m_data_decode_int(dataP, &value);
-   CU_ASSERT_EQUAL(result, 0);
+    result = lwm2m_data_decode_int(dataP, &value);
+    CU_ASSERT_EQUAL(result, 0);
 
-   lwm2m_data_encode_int(0x12, dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_INTEGER);
-   CU_ASSERT_EQUAL(dataP->value.asInteger, 0x12);
-   result = lwm2m_data_decode_int(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 0x12);
+    lwm2m_data_encode_int(0x12, dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_INTEGER);
+    CU_ASSERT_EQUAL(dataP->value.asInteger, 0x12);
+    result = lwm2m_data_decode_int(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 0x12);
 
-   lwm2m_data_encode_uint(0x13, dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_UNSIGNED_INTEGER);
-   CU_ASSERT_EQUAL(dataP->value.asUnsigned, 0x13);
-   result = lwm2m_data_decode_int(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 0x13);
+    lwm2m_data_encode_uint(0x13, dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_UNSIGNED_INTEGER);
+    CU_ASSERT_EQUAL(dataP->value.asUnsigned, 0x13);
+    result = lwm2m_data_decode_int(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 0x13);
 
-   lwm2m_data_encode_uint(0x8f34567891223344, dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_UNSIGNED_INTEGER);
-   CU_ASSERT_EQUAL(dataP->value.asUnsigned, 0x8f34567891223344);
-   result = lwm2m_data_decode_int(dataP, &value);
-   CU_ASSERT_EQUAL(result, 0);
+    lwm2m_data_encode_uint(0x8f34567891223344, dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_UNSIGNED_INTEGER);
+    CU_ASSERT_EQUAL(dataP->value.asUnsigned, 0x8f34567891223344);
+    result = lwm2m_data_decode_int(dataP, &value);
+    CU_ASSERT_EQUAL(result, 0);
 
-   lwm2m_data_encode_string("18", dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 2);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "18", 2));
-   result = lwm2m_data_decode_int(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 18);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    lwm2m_data_encode_string("18", dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 2);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "18", 2));
+    result = lwm2m_data_decode_int(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 18);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   lwm2m_data_encode_string("-14678", dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 6);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "-14678", 6));
-   result = lwm2m_data_decode_int(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, -14678);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    lwm2m_data_encode_string("-14678", dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 6);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "-14678", 6));
+    result = lwm2m_data_decode_int(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, -14678);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   uint8_t data1[] = { 0xed, 0xcc };
-   lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data1));
-   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data1, sizeof(data1)));
-   result = lwm2m_data_decode_int(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, -0x1234);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    uint8_t data1[] = {0xed, 0xcc};
+    lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data1));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data1, sizeof(data1)));
+    result = lwm2m_data_decode_int(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, -0x1234);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   uint8_t data2[] = { 0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
-   lwm2m_data_encode_opaque(data2, sizeof(data2), dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data2));
-   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data2, sizeof(data2)));
-   result = lwm2m_data_decode_int(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 0x7f34567891223344);
+    uint8_t data2[] = {0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44};
+    lwm2m_data_encode_opaque(data2, sizeof(data2), dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data2));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data2, sizeof(data2)));
+    result = lwm2m_data_decode_int(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 0x7f34567891223344);
 
-   lwm2m_data_free(1, dataP);
-   MEMORY_TRACE_AFTER_EQ;
+    lwm2m_data_free(1, dataP);
+    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_uint(void)
 {
-   MEMORY_TRACE_BEFORE;
-   uint64_t value;
-   int result;
-   lwm2m_data_t *dataP =  lwm2m_data_new(1);
-   CU_ASSERT_PTR_NOT_NULL(dataP);
+    MEMORY_TRACE_BEFORE;
+    uint64_t value;
+    int result;
+    lwm2m_data_t *dataP = lwm2m_data_new(1);
+    CU_ASSERT_PTR_NOT_NULL(dataP);
 
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 0);
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 0);
 
-   lwm2m_data_encode_uint(0x12, dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_UNSIGNED_INTEGER);
-   CU_ASSERT_EQUAL(dataP->value.asUnsigned, 0x12);
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 0x12);
+    lwm2m_data_encode_uint(0x12, dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_UNSIGNED_INTEGER);
+    CU_ASSERT_EQUAL(dataP->value.asUnsigned, 0x12);
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 0x12);
 
-   lwm2m_data_encode_int(0x13, dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_INTEGER);
-   CU_ASSERT_EQUAL(dataP->value.asInteger, 0x13);
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 0x13);
+    lwm2m_data_encode_int(0x13, dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_INTEGER);
+    CU_ASSERT_EQUAL(dataP->value.asInteger, 0x13);
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 0x13);
 
-   lwm2m_data_encode_int(-0x13, dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_INTEGER);
-   CU_ASSERT_EQUAL(dataP->value.asInteger, -0x13);
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 0);
+    lwm2m_data_encode_int(-0x13, dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_INTEGER);
+    CU_ASSERT_EQUAL(dataP->value.asInteger, -0x13);
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 0);
 
-   lwm2m_data_encode_string("18", dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 2);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "18", 2));
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 18);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    lwm2m_data_encode_string("18", dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 2);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "18", 2));
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 18);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   lwm2m_data_encode_string("-14678", dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 6);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "-14678", 6));
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 0);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    lwm2m_data_encode_string("-14678", dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 6);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "-14678", 6));
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 0);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   uint8_t data1[] = { 0xed, 0xcc };
-   lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data1));
-   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data1, sizeof(data1)));
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 0xedcc);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    uint8_t data1[] = {0xed, 0xcc};
+    lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data1));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data1, sizeof(data1)));
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 0xedcc);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   uint8_t data2[] = { 0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
-   lwm2m_data_encode_opaque(data2, sizeof(data2), dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data2));
-   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data2, sizeof(data2)));
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 0x7f34567891223344);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    uint8_t data2[] = {0x7f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44};
+    lwm2m_data_encode_opaque(data2, sizeof(data2), dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data2));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data2, sizeof(data2)));
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 0x7f34567891223344);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   uint8_t data3[] = { 0x8f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44 };
-   lwm2m_data_encode_opaque(data3, sizeof(data3), dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data3));
-   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data3, sizeof(data3)));
-   result = lwm2m_data_decode_uint(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, 0x8f34567891223344);
+    uint8_t data3[] = {0x8f, 0x34, 0x56, 0x78, 0x91, 0x22, 0x33, 0x44};
+    lwm2m_data_encode_opaque(data3, sizeof(data3), dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data3));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data3, sizeof(data3)));
+    result = lwm2m_data_decode_uint(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, 0x8f34567891223344);
 
-   lwm2m_data_free(1, dataP);
-   MEMORY_TRACE_AFTER_EQ;
+    lwm2m_data_free(1, dataP);
+    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_bool(void)
 {
-   MEMORY_TRACE_BEFORE;
-   bool value;
-   int result;
-   lwm2m_data_t *dataP =  lwm2m_data_new(1);
-   CU_ASSERT_PTR_NOT_NULL(dataP);
+    MEMORY_TRACE_BEFORE;
+    bool value;
+    int result;
+    lwm2m_data_t *dataP = lwm2m_data_new(1);
+    CU_ASSERT_PTR_NOT_NULL(dataP);
 
-   result = lwm2m_data_decode_bool(dataP, &value);
-   CU_ASSERT_EQUAL(result, 0);
+    result = lwm2m_data_decode_bool(dataP, &value);
+    CU_ASSERT_EQUAL(result, 0);
 
-   lwm2m_data_encode_bool(true, dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_BOOLEAN);
-   CU_ASSERT_EQUAL(dataP->value.asBoolean, true);
-   result = lwm2m_data_decode_bool(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, true);
+    lwm2m_data_encode_bool(true, dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_BOOLEAN);
+    CU_ASSERT_EQUAL(dataP->value.asBoolean, true);
+    result = lwm2m_data_decode_bool(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, true);
 
-   lwm2m_data_encode_bool(false, dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_BOOLEAN);
-   CU_ASSERT_EQUAL(dataP->value.asBoolean, false);
-   result = lwm2m_data_decode_bool(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, false);
+    lwm2m_data_encode_bool(false, dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_BOOLEAN);
+    CU_ASSERT_EQUAL(dataP->value.asBoolean, false);
+    result = lwm2m_data_decode_bool(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, false);
 
-   lwm2m_data_encode_string("1", dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 1);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "1", 1));
-   result = lwm2m_data_decode_bool(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, true);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    lwm2m_data_encode_string("1", dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 1);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "1", 1));
+    result = lwm2m_data_decode_bool(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, true);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   lwm2m_data_encode_string("0", dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 1);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "0", 1));
-   result = lwm2m_data_decode_bool(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, false);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    lwm2m_data_encode_string("0", dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_STRING);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, 1);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, "0", 1));
+    result = lwm2m_data_decode_bool(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, false);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   uint8_t data1[] = { 0x00 };
-   lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data1));
-   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data1, sizeof(data1)));
-   result = lwm2m_data_decode_bool(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, false);
-   lwm2m_free(dataP->value.asBuffer.buffer);
+    uint8_t data1[] = {0x00};
+    lwm2m_data_encode_opaque(data1, sizeof(data1), dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data1));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data1, sizeof(data1)));
+    result = lwm2m_data_decode_bool(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, false);
+    lwm2m_free(dataP->value.asBuffer.buffer);
 
-   uint8_t data2[] = { 0x01 };
-   lwm2m_data_encode_opaque(data2, sizeof(data2), dataP);
-   CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
-   CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data2));
-   CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
-   CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data2, sizeof(data2)));
-   result = lwm2m_data_decode_bool(dataP, &value);
-   CU_ASSERT_EQUAL(result, 1);
-   CU_ASSERT_EQUAL(value, true);
+    uint8_t data2[] = {0x01};
+    lwm2m_data_encode_opaque(data2, sizeof(data2), dataP);
+    CU_ASSERT_EQUAL(dataP->type, LWM2M_TYPE_OPAQUE);
+    CU_ASSERT_EQUAL(dataP->value.asBuffer.length, sizeof(data2));
+    CU_ASSERT_PTR_NOT_NULL_FATAL(dataP->value.asBuffer.buffer);
+    CU_ASSERT(0 == memcmp(dataP->value.asBuffer.buffer, data2, sizeof(data2)));
+    result = lwm2m_data_decode_bool(dataP, &value);
+    CU_ASSERT_EQUAL(result, 1);
+    CU_ASSERT_EQUAL(value, true);
 
-   lwm2m_data_free(1, dataP);
-   MEMORY_TRACE_AFTER_EQ;
+    lwm2m_data_free(1, dataP);
+    MEMORY_TRACE_AFTER_EQ;
 }
 
 static void test_tlv_float(void)
@@ -495,28 +493,27 @@ static void test_tlv_float(void)
 }
 
 static struct TestTable table[] = {
-        { "test of lwm2m_data_new()", test_tlv_new },
-        { "test of lwm2m_data_free()", test_tlv_free },
-        { "test of lwm2m_decodeTLV()", test_decodeTLV },
-        { "test of lwm2m_data_parse()", test_tlv_parse },
-        { "test of lwm2m_data_serialize()", test_tlv_serialize },
-        { "test of lwm2m_data_encode_int() and lwm2m_data_decode_int()", test_tlv_int },
-        { "test of lwm2m_data_encode_uint() and lwm2m_data_decode_uint()", test_tlv_uint },
-        { "test of lwm2m_data_encode_bool()and lwm2m_data_decode_bool()", test_tlv_bool },
-        { "test of lwm2m_data_encode_float() and lwm2m_data_decode_float()", test_tlv_float },
-        { NULL, NULL },
+    {"test of lwm2m_data_new()", test_tlv_new},
+    {"test of lwm2m_data_free()", test_tlv_free},
+    {"test of lwm2m_decodeTLV()", test_decodeTLV},
+    {"test of lwm2m_data_parse()", test_tlv_parse},
+    {"test of lwm2m_data_serialize()", test_tlv_serialize},
+    {"test of lwm2m_data_encode_int() and lwm2m_data_decode_int()", test_tlv_int},
+    {"test of lwm2m_data_encode_uint() and lwm2m_data_decode_uint()", test_tlv_uint},
+    {"test of lwm2m_data_encode_bool()and lwm2m_data_decode_bool()", test_tlv_bool},
+    {"test of lwm2m_data_encode_float() and lwm2m_data_decode_float()", test_tlv_float},
+    {NULL, NULL},
 };
 
 CU_ErrorCode create_tlv_suit()
 {
-   CU_pSuite pSuite = NULL;
+    CU_pSuite pSuite = NULL;
 
-   pSuite = CU_add_suite("Suite_TLV", NULL, NULL);
-   if (NULL == pSuite) {
-      return CU_get_error();
-   }
+    pSuite = CU_add_suite("Suite_TLV", NULL, NULL);
+    if (NULL == pSuite)
+    {
+        return CU_get_error();
+    }
 
-   return add_tests(pSuite, table);
+    return add_tests(pSuite, table);
 }
-
-

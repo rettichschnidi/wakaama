@@ -16,8 +16,8 @@
  *
  *******************************************************************************/
 
-#include <stdio.h>
 #include "liblwm2m.h"
+#include <stdio.h>
 
 typedef enum
 {
@@ -33,46 +33,46 @@ typedef enum
 
 typedef struct
 {
-    uint16_t    id;
-    char *      uri;
-    bool        isBootstrap;
-    uint32_t    lifetime;
-    uint8_t     securityMode;
-    uint8_t *   publicKey;
-    uint8_t *   privateKey;
-    uint8_t *   serverKey;
+    uint16_t id;
+    char *uri;
+    bool isBootstrap;
+    uint32_t lifetime;
+    uint8_t securityMode;
+    uint8_t *publicKey;
+    uint8_t *privateKey;
+    uint8_t *serverKey;
 } server_info_t;
 
 typedef struct _server_data_
 {
-    struct _server_data_ * next;  // matches lwm2m_list_t::next
-    uint16_t               id;    // matches lwm2m_list_t::id
-    lwm2m_data_t *         securityData;
-    int                    securitySize;
-    lwm2m_data_t *         serverData;
-    int                    serverSize;
+    struct _server_data_ *next; // matches lwm2m_list_t::next
+    uint16_t id;                // matches lwm2m_list_t::id
+    lwm2m_data_t *securityData;
+    int securitySize;
+    lwm2m_data_t *serverData;
+    int serverSize;
 } bs_server_data_t;
 
 typedef struct _command_
 {
-    struct _command_ * next;
-    bs_operation_t  operation;
-    lwm2m_uri_t *   uri;
-    uint16_t        serverId;
+    struct _command_ *next;
+    bs_operation_t operation;
+    lwm2m_uri_t *uri;
+    uint16_t serverId;
 } bs_command_t;
 
 typedef struct _endpoint_info_
 {
-    struct _endpoint_info_ * next;
-    char *             name;
-    bs_command_t *     commandList;
+    struct _endpoint_info_ *next;
+    char *name;
+    bs_command_t *commandList;
 } bs_endpoint_info_t;
 
 typedef struct
 {
-    bs_server_data_t *   serverList;
-    bs_endpoint_info_t * endpointList;
+    bs_server_data_t *serverList;
+    bs_endpoint_info_t *endpointList;
 } bs_info_t;
 
-bs_info_t * bs_get_info(FILE * fd);
-void bs_free_info(bs_info_t * infoP);
+bs_info_t *bs_get_info(FILE *fd);
+void bs_free_info(bs_info_t *infoP);

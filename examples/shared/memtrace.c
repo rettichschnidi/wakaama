@@ -23,20 +23,23 @@
 #undef free
 #undef strdup
 
-typedef struct MemoryEntry {
-    struct MemoryEntry* next;
+typedef struct MemoryEntry
+{
+    struct MemoryEntry *next;
     const char *file;
     const char *function;
-    int         lineno;
-    size_t      size;
-    int         count;
-    uint32_t    data[1];
+    int lineno;
+    size_t size;
+    int count;
+    uint32_t data[1];
 } memory_entry_t;
 
-static memory_entry_t prv_memory_malloc_list = { .next = NULL, .file = "head", .function="malloc", .lineno = 0, .size = 0, .count = 0};
-static memory_entry_t prv_memory_free_list = { .next = NULL, .file = "head", .function="free", .lineno = 0, .size = 0, .count = 0};
+static memory_entry_t prv_memory_malloc_list = {
+    .next = NULL, .file = "head", .function = "malloc", .lineno = 0, .size = 0, .count = 0};
+static memory_entry_t prv_memory_free_list = {
+    .next = NULL, .file = "head", .function = "free", .lineno = 0, .size = 0, .count = 0};
 
-static memory_entry_t* prv_memory_find_previous(memory_entry_t* list, void* memory)
+static memory_entry_t *prv_memory_find_previous(memory_entry_t *list, void *memory)
 {
     while (NULL != list->next)
     {
@@ -49,7 +52,7 @@ static memory_entry_t* prv_memory_find_previous(memory_entry_t* list, void* memo
     return NULL;
 }
 
-static void prv_trace_add_free_list(memory_entry_t* remove, const char* file, const char* function, int lineno)
+static void prv_trace_add_free_list(memory_entry_t *remove, const char *file, const char *function, int lineno)
 {
     remove->next = prv_memory_free_list.next;
     prv_memory_free_list.next = remove;
@@ -72,19 +75,19 @@ static void prv_trace_add_free_list(memory_entry_t* remove, const char* file, co
     }
 }
 
-char* lwm2m_trace_strdup(const char* str, const char* file, const char* function, int lineno)
+char *lwm2m_trace_strdup(const char *str, const char *file, const char *function, int lineno)
 {
     size_t length = strlen(str);
-    char* result = lwm2m_trace_malloc(length +1, file, function, lineno);
+    char *result = lwm2m_trace_malloc(length + 1, file, function, lineno);
     memcpy(result, str, length);
     result[length] = 0;
     return result;
 }
 
-void* lwm2m_trace_malloc(size_t size, const char* file, const char* function, int lineno)
+void *lwm2m_trace_malloc(size_t size, const char *file, const char *function, int lineno)
 {
     static int counter = 0;
-    memory_entry_t* entry = malloc(size + sizeof(memory_entry_t));
+    memory_entry_t *entry = malloc(size + sizeof(memory_entry_t));
     entry->next = prv_memory_malloc_list.next;
     prv_memory_malloc_list.next = entry;
     ++prv_memory_malloc_list.count;
@@ -100,14 +103,14 @@ void* lwm2m_trace_malloc(size_t size, const char* file, const char* function, in
     return &(entry->data);
 }
 
-void lwm2m_trace_free(void* mem, const char* file, const char* function, int lineno)
+void lwm2m_trace_free(void *mem, const char *file, const char *function, int lineno)
 {
     if (NULL != mem)
     {
-        memory_entry_t* entry = prv_memory_find_previous(&prv_memory_malloc_list, mem);
+        memory_entry_t *entry = prv_memory_find_previous(&prv_memory_malloc_list, mem);
         if (NULL != entry)
         {
-            memory_entry_t* remove = entry->next;
+            memory_entry_t *remove = entry->next;
             entry->next = remove->next;
             --prv_memory_malloc_list.count;
             prv_memory_malloc_list.size -= remove->size;
@@ -117,7 +120,7 @@ void lwm2m_trace_free(void* mem, const char* file, const char* function, int lin
         else
         {
             fprintf(stderr, "memory: free error (no malloc) %s, %d, %s\n", file, lineno, function);
-            memory_entry_t* entry = prv_memory_find_previous(&prv_memory_free_list, mem);
+            memory_entry_t *entry = prv_memory_find_previous(&prv_memory_free_list, mem);
             if (NULL != entry)
             {
                 entry = entry->next;
@@ -145,28 +148,31 @@ void trace_print(int loops, int level)
         {
             size_t total = 0;
             int entries = 0;
-            memory_entry_t* entry = prv_memory_malloc_list.next;
+            memory_entry_t *entry = prv_memory_malloc_list.next;
             while (NULL != entry)
             {
-                fprintf(stdout,"memory: #%d, %lu bytes, %s, %d, %s\n", entry->count, (unsigned long) entry->size, entry->file, entry->lineno, entry->function);
+                fprintf(stdout, "memory: #%d, %lu bytes, %s, %d, %s\n", entry->count, (unsigned long)entry->size,
+                        entry->file, entry->lineno, entry->function);
                 ++entries;
                 total += entry->size;
                 entry = entry->next;
             }
             if (entries != prv_memory_malloc_list.count)
             {
-                fprintf(stderr,"memory: error %d entries != %d\n", prv_memory_malloc_list.count, entries);
+                fprintf(stderr, "memory: error %d entries != %d\n", prv_memory_malloc_list.count, entries);
             }
             if (total != prv_memory_malloc_list.size)
             {
-                fprintf(stdout,"memory: error %lu total bytes != %lu\n", (unsigned long) prv_memory_malloc_list.size, (unsigned long) total);
+                fprintf(stdout, "memory: error %lu total bytes != %lu\n", (unsigned long)prv_memory_malloc_list.size,
+                        (unsigned long)total);
             }
         }
-        fprintf(stdout,"memory: %d entries, %lu total bytes\n", prv_memory_malloc_list.count, (unsigned long) prv_memory_malloc_list.size);
+        fprintf(stdout, "memory: %d entries, %lu total bytes\n", prv_memory_malloc_list.count,
+                (unsigned long)prv_memory_malloc_list.size);
     }
 }
 
-void trace_status(int* blocks, size_t* size)
+void trace_status(int *blocks, size_t *size)
 {
     if (NULL != blocks)
     {
