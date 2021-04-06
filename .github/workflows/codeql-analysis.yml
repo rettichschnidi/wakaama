@@ -1,0 +1,47 @@
+name: "CodeQL"
+
+on: [push, pull_request]
+
+jobs:
+  CodeQL-Build:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Override automatic language detection by changing the below list
+        # Supported options are ['csharp', 'cpp', 'go', 'java', 'javascript', 'python']
+        language: ['cpp']
+        # Learn more...
+        # https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#overriding-automatic-language-detection
+
+    steps:
+    - name: Checkout code including full history and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    # If this run was triggered by a pull request event, then checkout
+    # the head of the pull request instead of the merge commit.
+    - run: git checkout HEAD^2
+      if: ${{ github.event_name == 'pull_request' }}
+
+    - name: Install dependencies from APT repository
+      run: |
+        sudo apt-get update
+        sudo apt-get install libcunit1-dev wget unzip
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: 'cpp'
+
+    - name: Build all binaries
+      run: |
+        tools/ci/run_ci.sh --build --verbose
+      env:
+        CC:  ${{ matrix.compiler }}
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
