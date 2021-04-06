@@ -22,11 +22,6 @@ jobs:
         submodules: true
         fetch-depth: 0
 
-    # If this run was triggered by a pull request event, then checkout
-    # the head of the pull request instead of the merge commit.
-    - run: git checkout HEAD^2
-      if: ${{ github.event_name == 'pull_request' }}
-
     - name: Install dependencies from APT repository
       run: |
         sudo apt-get update
@@ -44,10 +39,7 @@ jobs:
         languages: cpp
 
     - name: Build all binaries
-      run: |
-        tools/ci/run_ci.sh --build --verbose
-      env:
-        CC:  ${{ matrix.compiler }}
+      run: tools/ci/run_ci.sh --build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
