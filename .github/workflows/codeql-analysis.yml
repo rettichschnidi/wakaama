@@ -32,10 +32,16 @@ jobs:
         sudo apt-get update
         sudo apt-get install libcunit1-dev wget unzip
 
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Install Ninja
+      uses: seanmiddleditch/gha-setup-ninja@master
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
-        languages: 'cpp'
+        languages: cpp
 
     - name: Build all binaries
       run: |
