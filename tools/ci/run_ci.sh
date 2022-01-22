@@ -28,6 +28,7 @@ OPT_CLANG_FORMAT="clang-format-11"
 OPT_SANITIZER=""
 OPT_SCAN_BUILD=""
 OPT_SONARQUBE=""
+OPT_SOURCE_DIRECTORY="${REPO_ROOT_DIR}"
 OPT_TEST_COVERAGE_REPORT=""
 OPT_VERBOSE=0
 OPT_WRAPPER_CMD=""
@@ -55,6 +56,8 @@ Options:
                             (VERSION: 99, 11)
   --clang-format BINARY     Set specific clang-format binary
                             (BINARY: defaults to ${OPT_CLANG_FORMAT})
+  --source-directory PATH   Configure CMake using PATH instead of the
+                            repositories root directory.
   --sanitizer TYPE          Enable sanitizer
                             (TYPE: address leak thread undefined)
   --scan-build BINARY       Enable Clang code analyzer using specified
@@ -75,7 +78,7 @@ Available steps (executed by --all):
   --run-clean              Remove all build artifacts
   --run-cmake-lint         Check CMake files formatting
   --run-build              Build all targets
-  --run-tests              Build and execute tests
+  --run-tests              Execute tests (works only for top level project)
 "
 
 function usage() {
@@ -133,7 +136,7 @@ function run_build() {
   # Existing directory needed by SonarQube build-wrapper
   mkdir -p build-wakaama
 
-  ${OPT_WRAPPER_CMD} cmake -GNinja -S . -B build-wakaama ${CMAKE_ARGS}
+  ${OPT_WRAPPER_CMD} cmake -GNinja -S ${OPT_SOURCE_DIRECTORY} -B build-wakaama ${CMAKE_ARGS}
   ${OPT_WRAPPER_CMD} cmake --build build-wakaama
 }
 
@@ -208,6 +211,7 @@ if ! PARSED_OPTS=$(getopt -o vah \
                           -l sanitizer: \
                           -l scan-build: \
                           -l sonarqube: \
+                          -l source-directory: \
                           -l test-coverage: \
                           -l verbose \
                           --name "${SCRIPT_NAME}" -- "$@");
@@ -281,6 +285,10 @@ while true; do
       OPT_SONARQUBE=$2
       # Analyzing works only when code gets actually built
       RUN_CLEAN=1
+      shift 2
+      ;;
+    --source-directory)
+      OPT_SOURCE_DIRECTORY=$2
       shift 2
       ;;
     --test-coverage)
