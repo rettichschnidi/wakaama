@@ -1,0 +1,21 @@
+with section("format"):
+  # How wide to allow formatted cmake files
+  line_width = 120
+
+  # How many spaces to tab for indent
+  tab_size = 4
+
+  # Smaller diffs: If a statement is wrapped to more than one line, then dangle
+  # the closing parenthesis on its own line.
+  dangle_parens = True
+
+  # Settling cross platform disputes: What style line endings to use in the
+  # output.
+  line_ending = 'unix'
+
+  # Format keywords consistently as 'upper case
+  keyword_case = 'upper'
+
+with section("markup"):
+  # What character to use for bulleted lists
+  bullet_char = '-'
