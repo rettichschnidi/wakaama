@@ -245,6 +245,19 @@ static void test_option_format_unsupported_critical(void) {
     CU_ASSERT_EQUAL(coap_parse_message(&coap_pkt, data, sizeof(data)), BAD_OPTION_4_02);
 }
 
+static void test_option_format_content_format(void) {
+    uint8_t data[] = {
+        0x60 , // version 1, no options, no tokens
+        0x83, // Non-empty message
+        0xC3, // Message ID
+        0xF8, // Message ID
+        0xC0, // Content format "text/plain; charset=utf-8"
+    };
+
+    CU_ASSERT_EQUAL(coap_parse_message(&coap_pkt, data, sizeof(data)), NO_ERROR);
+}
+
+
 static void test_option_format_unsupported_elective(void) {
     uint8_t data[] = {
         0x40, // version 1, no options, no token
@@ -324,6 +337,7 @@ static struct TestTable table[] = {
     {"Option format: If none match", test_option_format_if_none_match},
     {"Option format: Unsupported, elective", test_option_format_unsupported_elective},
     {"Option format: Unsupported, critical", test_option_format_unsupported_critical},
+    {"Option format: Content format", test_option_format_content_format},
     {"Payload: Minimal", test_payload_min},
     {"Payload: Maximal", test_payload_max},
     {NULL, NULL},
