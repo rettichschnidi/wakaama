@@ -175,44 +175,33 @@ static void print_indent(FILE * stream,
 }
 
 void output_buffer(FILE *stream, const uint8_t *buffer, size_t length, int indent) {
-    size_t i;
+    const uint8_t *const buffer_end = buffer + length;
 
     if (length == 0) fprintf(stream, "\n");
 
     if (buffer == NULL) return;
 
-    i = 0;
-    while (i < length)
-    {
-        uint8_t array[16];
+    while (buffer < buffer_end) {
         int j;
 
         print_indent(stream, indent);
-        memcpy(array, buffer+i, 16);
-        for (j = 0 ; j < 16 && i+j < length; j++)
-        {
-            fprintf(stream, "%02X ", array[j]);
-            if (j%4 == 3) fprintf(stream, " ");
-        }
-        if (length > 16)
-        {
-            while (j < 16)
-            {
+        for (j = 0; j < 16; j++) {
+            if (buffer + j < buffer_end)
+                fprintf(stream, "%02X ", buffer[j]);
+            else
                 fprintf(stream, "   ");
-                if (j%4 == 3) fprintf(stream, " ");
-                j++;
-            }
+            if (j % 4 == 3)
+                fprintf(stream, " ");
         }
         fprintf(stream, " ");
-        for (j = 0 ; j < 16 && i+j < length; j++)
-        {
-            if (isprint(array[j]))
-                fprintf(stream, "%c", array[j]);
+        for (j = 0; j < 16 && buffer + j < buffer_end; j++) {
+            if (isprint(buffer[j]))
+                fprintf(stream, "%c", buffer[j]);
             else
                 fprintf(stream, ".");
         }
         fprintf(stream, "\n");
-        i += 16;
+        buffer += 16;
     }
 }
 
