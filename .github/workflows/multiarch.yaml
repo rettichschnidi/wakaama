@@ -35,4 +35,7 @@ jobs:
                 wget \
                 ;
         run: |
+          whoami
+          ls -lhd .
+          ls -lhd "${PWD}/examples/shared/tinydtls"
           tools/ci/run_ci.sh --run-build --run-tests
