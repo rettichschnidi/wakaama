@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/eclipse/wakaama/actions/workflows/build_and_test.yaml)
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/eclipse-wakaama/wakaama/badge)](https://scorecard.dev/viewer/?uri=github.com/eclipse-wakaama/wakaama)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rettichschnidi/wakaama/badge)](https://scorecard.dev/viewer/?uri=github.com/rettichschnidi/wakaama)
 
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9686/badge)](https://www.bestpractices.dev/projects/9686)
 
