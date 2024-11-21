@@ -1,6 +1,6 @@
 # Our (direct) dependencies
 cmake-format==0.6.13 --hash=sha256:ec7ed949101e5f0b7bc19317d122b83ccbc28fd766c41c93094845719667c56e
-gitlint==0.19 --hash=sha256:3a566c6f641e054be26ecf67210c237e4fe45472f6606761c9fea7b44e570d3c
+gitlint==0.19.1 --hash=sha256:26bb085959148d99fbbc178b4e56fda6c3edd7646b7c2a24d8ee1f8e036ed85d --hash=sha256:b5b70fb894e80849b69abbb65ee7dbb3520fc3511f202a6e6b6ddf1a71ee8f61
 pylint==3.3.1 --hash=sha256:2f846a466dd023513240bc140ad2dd73bfc080a5d85a710afdb728c420a5a2b9
 
 # For convenience
